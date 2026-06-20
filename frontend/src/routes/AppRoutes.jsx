@@ -3,7 +3,7 @@ import ProtectedRoute from '../components/layout/ProtectedRoute'
 import AppLayout from '../components/layout/AppLayout'
 import { ROLES } from '../constants/roles'
 
-// Pages
+// Phase 1 & 2 Pages
 import LoginPage from '../pages/auth/LoginPage'
 import DashboardPage from '../pages/dashboard/DashboardPage'
 import ProductsPage from '../pages/products/ProductsPage'
@@ -19,17 +19,33 @@ import SalesOrderDetailPage from '../pages/sales/SalesOrderDetailPage'
 import SalesAnalyticsPage from '../pages/sales/SalesAnalyticsPage'
 import SalesDashboardPage from '../pages/sales/SalesDashboardPage'
 
-// ─── Role Groups (mirrors backend permissions.js) ────────────────────────────
-// ADMIN + BUSINESS_OWNER: full access
-// SALES_USER: Customers, Sales Orders, Deliveries
-// PURCHASE_USER: No access to sales module
-// MANUFACTURING_USER: No access to sales module
-// INVENTORY_MANAGER: Read-only on inventory, products, sales orders (reservations)
+// Phase 3 Pages — Vendors
+import VendorsPage from '../pages/vendors/VendorsPage'
+import VendorDetailPage from '../pages/vendors/VendorDetailPage'
+import CreateVendorPage from '../pages/vendors/CreateVendorPage'
+import EditVendorPage from '../pages/vendors/EditVendorPage'
 
+// Phase 3 Pages — Purchase Orders
+import PurchaseOrdersPage from '../pages/purchase/PurchaseOrdersPage'
+import PurchaseOrderDetailPage from '../pages/purchase/PurchaseOrderDetailPage'
+import CreatePurchaseOrderPage from '../pages/purchase/CreatePurchaseOrderPage'
+import GoodsReceiptPage from '../pages/purchase/GoodsReceiptPage'
+
+// Phase 3 Pages — Procurement
+import ProcurementDashboardPage from '../pages/procurement/ProcurementDashboardPage'
+import SupplierPerformancePage from '../pages/procurement/SupplierPerformancePage'
+
+// ─── Role Groups ──────────────────────────────────────────────────────────────
 const SALES_ROLES        = [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.SALES_USER]
 const SALES_READ_ROLES   = [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.SALES_USER, ROLES.INVENTORY_MANAGER]
 const INVENTORY_ROLES    = [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.INVENTORY_MANAGER]
 const ANALYTICS_ROLES    = [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.SALES_USER]
+
+// Phase 3 role groups
+const VENDOR_READ_ROLES  = [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.PURCHASE_USER, ROLES.SALES_USER, ROLES.INVENTORY_MANAGER, ROLES.MANUFACTURING_USER]
+const PURCHASE_ROLES     = [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.PURCHASE_USER]
+const PURCHASE_READ_ROLES= [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.PURCHASE_USER, ROLES.SALES_USER, ROLES.INVENTORY_MANAGER, ROLES.MANUFACTURING_USER]
+const PROC_DASH_ROLES    = [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.PURCHASE_USER, ROLES.INVENTORY_MANAGER]
 
 const AppRoutes = () => {
   return (
@@ -51,115 +67,45 @@ const AppRoutes = () => {
         {/* Dashboard — all roles */}
         <Route path="dashboard" element={<DashboardPage />} />
 
-        {/* Products — admin, business owner, sales, inventory */}
-        <Route
-          path="products"
-          element={
-            <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.SALES_USER, ROLES.INVENTORY_MANAGER]}>
-              <ProductsPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="products/:id"
-          element={
-            <ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.SALES_USER, ROLES.INVENTORY_MANAGER]}>
-              <ProductDetailPage />
-            </ProtectedRoute>
-          }
-        />
+        {/* Products */}
+        <Route path="products" element={<ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.SALES_USER, ROLES.INVENTORY_MANAGER]}><ProductsPage /></ProtectedRoute>} />
+        <Route path="products/:id" element={<ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.SALES_USER, ROLES.INVENTORY_MANAGER]}><ProductDetailPage /></ProtectedRoute>} />
 
-        {/* Inventory — admin, business owner, inventory manager */}
-        <Route
-          path="inventory"
-          element={
-            <ProtectedRoute allowedRoles={INVENTORY_ROLES}>
-              <InventoryPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="inventory/movements"
-          element={
-            <ProtectedRoute allowedRoles={INVENTORY_ROLES}>
-              <InventoryMovementsPage />
-            </ProtectedRoute>
-          }
-        />
+        {/* Inventory */}
+        <Route path="inventory" element={<ProtectedRoute allowedRoles={[...INVENTORY_ROLES, ROLES.PURCHASE_USER]}><InventoryPage /></ProtectedRoute>} />
+        <Route path="inventory/movements" element={<ProtectedRoute allowedRoles={INVENTORY_ROLES}><InventoryMovementsPage /></ProtectedRoute>} />
 
-        {/* Customers — admin, business owner, sales (PURCHASE/MANUFACTURING: no access) */}
-        <Route
-          path="customers"
-          element={
-            <ProtectedRoute allowedRoles={SALES_ROLES}>
-              <CustomersPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="customers/:id"
-          element={
-            <ProtectedRoute allowedRoles={SALES_ROLES}>
-              <CustomerDetailPage />
-            </ProtectedRoute>
-          }
-        />
+        {/* Customers */}
+        <Route path="customers" element={<ProtectedRoute allowedRoles={SALES_ROLES}><CustomersPage /></ProtectedRoute>} />
+        <Route path="customers/:id" element={<ProtectedRoute allowedRoles={SALES_ROLES}><CustomerDetailPage /></ProtectedRoute>} />
 
-        {/* Sales Orders — admin, business owner, sales (read-only for inventory manager) */}
-        <Route
-          path="sales"
-          element={
-            <ProtectedRoute allowedRoles={SALES_READ_ROLES}>
-              <SalesOrdersPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="sales/:id"
-          element={
-            <ProtectedRoute allowedRoles={SALES_READ_ROLES}>
-              <SalesOrderDetailPage />
-            </ProtectedRoute>
-          }
-        />
+        {/* Sales Orders */}
+        <Route path="sales" element={<ProtectedRoute allowedRoles={SALES_READ_ROLES}><SalesOrdersPage /></ProtectedRoute>} />
+        <Route path="sales/:id" element={<ProtectedRoute allowedRoles={SALES_READ_ROLES}><SalesOrderDetailPage /></ProtectedRoute>} />
 
-        {/* Sales Dashboard — admin, business owner, sales */}
-        <Route
-          path="sales-dashboard"
-          element={
-            <ProtectedRoute allowedRoles={ANALYTICS_ROLES}>
-              <SalesDashboardPage />
-            </ProtectedRoute>
-          }
-        />
+        {/* Sales Dashboard & Analytics */}
+        <Route path="sales-dashboard" element={<ProtectedRoute allowedRoles={ANALYTICS_ROLES}><SalesDashboardPage /></ProtectedRoute>} />
+        <Route path="sales-analytics" element={<ProtectedRoute allowedRoles={ANALYTICS_ROLES}><SalesAnalyticsPage /></ProtectedRoute>} />
 
-        {/* Sales Analytics — admin, business owner, sales */}
-        <Route
-          path="sales-analytics"
-          element={
-            <ProtectedRoute allowedRoles={ANALYTICS_ROLES}>
-              <SalesAnalyticsPage />
-            </ProtectedRoute>
-          }
-        />
+        {/* ── Phase 3: Vendors ────────────────────────────────────────────── */}
+        <Route path="vendors" element={<ProtectedRoute allowedRoles={VENDOR_READ_ROLES}><VendorsPage /></ProtectedRoute>} />
+        <Route path="vendors/new" element={<ProtectedRoute allowedRoles={PURCHASE_ROLES}><CreateVendorPage /></ProtectedRoute>} />
+        <Route path="vendors/:id" element={<ProtectedRoute allowedRoles={VENDOR_READ_ROLES}><VendorDetailPage /></ProtectedRoute>} />
+        <Route path="vendors/:id/edit" element={<ProtectedRoute allowedRoles={PURCHASE_ROLES}><EditVendorPage /></ProtectedRoute>} />
 
-        {/* Users — admin only (PURCHASE/MANUFACTURING/SALES/INVENTORY: no access) */}
-        <Route
-          path="users"
-          element={
-            <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
-              <UsersPage />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="users/:id"
-          element={
-            <ProtectedRoute allowedRoles={[ROLES.ADMIN]}>
-              <UserDetailPage />
-            </ProtectedRoute>
-          }
-        />
+        {/* ── Phase 3: Purchase Orders ────────────────────────────────────── */}
+        <Route path="purchase-orders" element={<ProtectedRoute allowedRoles={PURCHASE_READ_ROLES}><PurchaseOrdersPage /></ProtectedRoute>} />
+        <Route path="purchase-orders/new" element={<ProtectedRoute allowedRoles={PURCHASE_ROLES}><CreatePurchaseOrderPage /></ProtectedRoute>} />
+        <Route path="purchase-orders/:id" element={<ProtectedRoute allowedRoles={PURCHASE_READ_ROLES}><PurchaseOrderDetailPage /></ProtectedRoute>} />
+        <Route path="purchase-orders/:id/receive" element={<ProtectedRoute allowedRoles={PURCHASE_ROLES}><GoodsReceiptPage /></ProtectedRoute>} />
+
+        {/* ── Phase 3: Procurement Analytics ─────────────────────────────── */}
+        <Route path="procurement-dashboard" element={<ProtectedRoute allowedRoles={PROC_DASH_ROLES}><ProcurementDashboardPage /></ProtectedRoute>} />
+        <Route path="supplier-performance" element={<ProtectedRoute allowedRoles={PURCHASE_ROLES}><SupplierPerformancePage /></ProtectedRoute>} />
+
+        {/* Users — admin only */}
+        <Route path="users" element={<ProtectedRoute allowedRoles={[ROLES.ADMIN]}><UsersPage /></ProtectedRoute>} />
+        <Route path="users/:id" element={<ProtectedRoute allowedRoles={[ROLES.ADMIN]}><UserDetailPage /></ProtectedRoute>} />
       </Route>
 
       {/* Catch-all */}
@@ -169,3 +115,4 @@ const AppRoutes = () => {
 }
 
 export default AppRoutes
+
