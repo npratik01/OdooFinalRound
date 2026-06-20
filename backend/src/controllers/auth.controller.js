@@ -1,40 +1,52 @@
-'use strict';
+const authService = require("../services/auth.service");
+const { formatSuccessResponse } = require('../utils/responseHelper');
 
-const authService = require('../services/auth.service');
-const { sendSuccess, sendError } = require('../utils/apiResponse');
-
-const login = async (req, res, next) => {
+async function login(req, res, next) {
   try {
     const { email, password } = req.body;
-    const result = await authService.login(email, password);
-    return sendSuccess(res, {
-      message: 'Login successful',
-      data: { token: result.token, user: result.user },
-    });
+    const result = await authService.login({ email, password });
+    return formatSuccessResponse(res, { user: result.user, accessToken: result.accessToken, refreshToken: result.refreshToken }, 'Logged in');
   } catch (err) {
-    if (err.statusCode) {
-      return sendError(res, { statusCode: err.statusCode, message: err.message });
-    }
     next(err);
   }
-};
+}
 
-const getMe = async (req, res, next) => {
+async function register(req, res, next) {
   try {
-    const user = await authService.getMe(req.user.userId);
-    return sendSuccess(res, { message: 'User fetched successfully', data: user });
+    const payload = req.body;
+    const result = await authService.register(payload);
+    return formatSuccessResponse(res, { user: result.user, accessToken: result.accessToken, refreshToken: result.refreshToken }, 'Registered');
   } catch (err) {
-    if (err.statusCode) {
-      return sendError(res, { statusCode: err.statusCode, message: err.message });
-    }
     next(err);
   }
-};
+}
 
-const logout = (req, res) => {
-  // JWT is stateless; logout is handled client-side by deleting the token.
-  // Future: implement token blacklist with Redis for production.
-  return sendSuccess(res, { message: 'Logged out successfully' });
-};
+async function me(req, res, next) {
+  try {
+    return formatSuccessResponse(res, { user: req.user });
+  } catch (err) {
+    next(err);
+  }
+}
 
-module.exports = { login, getMe, logout };
+async function refresh(req, res, next) {
+  try {
+    const { refreshToken } = req.body;
+    const tokens = await authService.refreshTokens(refreshToken);
+    return formatSuccessResponse(res, { accessToken: tokens.accessToken, refreshToken: tokens.refreshToken }, 'Tokens refreshed');
+  } catch (err) {
+    next(err);
+  }
+}
+
+async function logout(req, res, next) {
+  try {
+    const { refreshToken } = req.body || {};
+    await authService.revokeRefreshToken(refreshToken);
+    return formatSuccessResponse(res, {}, 'Logged out');
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { login, register, me, refresh, logout };
