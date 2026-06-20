@@ -23,6 +23,10 @@ const inventoryMovementSchema = new mongoose.Schema({
       'PURCHASE_RECEIPT',
       'PURCHASE_RETURN',
       'PURCHASE_ADJUSTMENT',
+      // Phase 4 — Manufacturing
+      'MFG_COMPONENT_CONSUME',
+      'MFG_OUTPUT_PRODUCE',
+      'MFG_SCRAP',
     ],
     required: true,
     index: true
@@ -52,6 +56,8 @@ const inventoryMovementSchema = new mongoose.Schema({
       // Phase 3
       'PurchaseOrder',
       'GoodsReceipt',
+      // Phase 4
+      'ManufacturingOrder',
     ],
     required: true
   },

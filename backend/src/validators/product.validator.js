@@ -41,7 +41,7 @@ const updateProductSchema = Joi.object({
 
 const productQuerySchema = Joi.object({
   page: Joi.number().integer().min(1).default(1),
-  limit: Joi.number().integer().min(1).max(100).default(10),
+  limit: Joi.number().integer().min(1).max(1000).default(10),
   search: Joi.string().trim().max(200).allow('').optional(),
   sku: Joi.string().trim().max(50).allow('').optional(),           // NEW: SKU-specific search
   productType: Joi.string().valid(...Object.values(PRODUCT_TYPES)).optional(),

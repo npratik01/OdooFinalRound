@@ -3,7 +3,8 @@ import {
   LayoutDashboard, Package, Warehouse, Users,
   ChevronRight, Activity, LogOut, FileText,
   ArrowLeftRight, UserCheck, TrendingUp, Truck, BarChart2,
-  Building2, ShoppingCart, BarChart3, Award
+  Building2, ShoppingCart, BarChart3, Award,
+  Factory, Cpu, Wrench, AreaChart
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { ROLES } from '../../constants/roles'
@@ -85,6 +86,31 @@ const navItems = [
     icon: Award,
     roles: [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.PURCHASE_USER],
   },
+  // ── Manufacturing (Phase 4) ───────────────────────────────────────────────
+  {
+    to: '/manufacturing',
+    label: 'Mfg Orders',
+    icon: Factory,
+    roles: [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.MANUFACTURING_USER],
+  },
+  {
+    to: '/bom',
+    label: 'Bill of Materials',
+    icon: Cpu,
+    roles: [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.MANUFACTURING_USER],
+  },
+  {
+    to: '/work-centers',
+    label: 'Work Centers',
+    icon: Wrench,
+    roles: [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.MANUFACTURING_USER],
+  },
+  {
+    to: '/manufacturing-dashboard',
+    label: 'Mfg Dashboard',
+    icon: AreaChart,
+    roles: [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.MANUFACTURING_USER],
+  },
   // ── Admin ─────────────────────────────────────────────────────────────────
   {
     to: '/users',
@@ -111,7 +137,7 @@ const Sidebar = () => {
           </div>
           <div>
             <h1 className="font-bold text-white text-sm leading-tight">Mini ERP</h1>
-            <p className="text-xs text-slate-500 leading-tight">Phase 3 — Procurement</p>
+            <p className="text-xs text-slate-500 leading-tight">Phase 4 — Manufacturing</p>
           </div>
         </div>
       </div>
