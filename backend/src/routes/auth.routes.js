@@ -5,11 +5,10 @@ const {
   loginValidation,
   registerValidation,
 } = require("../validators/auth.validator");
-const { validate } = require("../middleware/validate.middleware");
 const { authenticate } = require("../middleware/auth.middleware");
 
-router.post("/login", loginValidation, validate, authController.login);
-router.post("/register", registerValidation, validate, authController.register);
+router.post("/login", loginValidation, authController.login);
+router.post("/register", registerValidation, authController.register);
 router.get("/me", authenticate, authController.me);
 router.post("/logout", authenticate, authController.logout);
 router.post("/refresh", authController.refresh);

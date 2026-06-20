@@ -35,8 +35,7 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-// connect DB
-connectDB();
+
 
 app.use("/api", routes);
 

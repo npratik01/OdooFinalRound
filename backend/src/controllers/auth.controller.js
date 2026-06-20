@@ -1,72 +1,69 @@
-const authService = require("../services/auth.service");
-const { formatSuccessResponse } = require("../utils/responseHelper");
+'use strict';
 
-async function login(req, res, next) {
+const authService = require('../services/auth.service');
+const { sendSuccess } = require('../utils/apiResponse');
+
+const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
     const result = await authService.login({ email, password });
-    return formatSuccessResponse(
-      res,
-      {
-        user: result.user,
-        accessToken: result.accessToken,
-        refreshToken: result.refreshToken,
-      },
-      "Logged in",
-    );
+    return sendSuccess(res, {
+      message: 'Login successful',
+      data: { token: result.accessToken, user: result.user },
+    });
   } catch (err) {
     next(err);
   }
-}
+};
 
-async function register(req, res, next) {
+const register = async (req, res, next) => {
   try {
     const payload = req.body;
     const result = await authService.register(payload);
-    return formatSuccessResponse(
-      res,
-      {
-        user: result.user,
-        accessToken: result.accessToken,
-        refreshToken: result.refreshToken,
-      },
-      "Registered",
-    );
+    return sendSuccess(res, {
+      message: 'Registered successfully',
+      data: { token: result.accessToken, user: result.user },
+    });
   } catch (err) {
     next(err);
   }
-}
+};
 
-async function me(req, res, next) {
+const me = async (req, res, next) => {
   try {
-    return formatSuccessResponse(res, { user: req.user });
+    return sendSuccess(res, {
+      message: 'User fetched successfully',
+      data: req.user,
+    });
   } catch (err) {
     next(err);
   }
-}
+};
 
-async function refresh(req, res, next) {
+const refresh = async (req, res, next) => {
   try {
     const { refreshToken } = req.body;
     const tokens = await authService.refreshTokens(refreshToken);
-    return formatSuccessResponse(
-      res,
-      { accessToken: tokens.accessToken, refreshToken: tokens.refreshToken },
-      "Tokens refreshed",
-    );
+    return sendSuccess(res, {
+      message: 'Tokens refreshed',
+      data: { token: tokens.accessToken, refreshToken: tokens.refreshToken },
+    });
   } catch (err) {
     next(err);
   }
-}
+};
 
-async function logout(req, res, next) {
+const logout = async (req, res, next) => {
   try {
     const { refreshToken } = req.body || {};
     await authService.revokeRefreshToken(refreshToken);
-    return formatSuccessResponse(res, {}, "Logged out");
+    return sendSuccess(res, {
+      message: 'Logged out successfully',
+    });
   } catch (err) {
     next(err);
   }
-}
+};
 
 module.exports = { login, register, me, refresh, logout };
+

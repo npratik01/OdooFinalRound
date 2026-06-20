@@ -10,7 +10,7 @@ require('dotenv').config();
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
-const User = require('../src/models/user.model');
+const User = require('../src/models/User.model');
 const Product = require('../src/models/Product.model');
 const Inventory = require('../src/models/Inventory.model');
 const Customer = require('../src/models/Customer.model');
@@ -347,12 +347,14 @@ const seedSalesWorkflows = async (users, customers) => {
   // Log reservation movement
   await new InventoryMovement({
     productId: bearing._id,
-    quantity: -15,
-    movementType: 'RESERVATION',
+    quantity: 15,
+    movementType: 'SALES_RESERVATION',
+    referenceType: 'SalesOrder',
     referenceId: confirmedSO._id,
-    referenceModel: 'SalesOrder',
-    description: 'Reserved 15 bearings for SO-2026-0002',
-    performedBy: adminUser._id
+    remarks: 'Reserved 15 bearings for SO-2026-0002',
+    previousQty: 500,
+    newQty: 485,
+    createdBy: adminUser._id
   }).save();
 
   // 3. Create a DELIVERED Sales Order (Fully Shipped)
@@ -396,12 +398,14 @@ const seedSalesWorkflows = async (users, customers) => {
   // Log physical delivery movement
   await new InventoryMovement({
     productId: steelRod._id,
-    quantity: -5,
-    movementType: 'DELIVERY',
+    quantity: 5,
+    movementType: 'SALES_DELIVERY',
+    referenceType: 'Delivery',
     referenceId: dlv._id,
-    referenceModel: 'Delivery',
-    description: 'Shipped 5 steel rods for DLV-202606-0001',
-    performedBy: adminUser._id
+    remarks: 'Shipped 5 steel rods for DLV-202606-0001',
+    previousQty: 150,
+    newQty: 145,
+    createdBy: adminUser._id
   }).save();
 };
 

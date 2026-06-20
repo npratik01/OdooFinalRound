@@ -1,5 +1,5 @@
 const crypto = require("crypto");
-const User = require("../models/user.model");
+const User = require("../models/User.model");
 const RefreshToken = require("../models/refreshToken.model");
 const { sign } = require("../utils/jwt");
 const config = require("../config");
@@ -29,7 +29,7 @@ function msFromString(str) {
 }
 
 async function login({ email, password }) {
-  const user = await User.findOne({ email: email.toLowerCase() });
+  const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
   if (!user || !user.isActive)
     throw { status: 401, message: "Invalid credentials" };
   const valid = await user.comparePassword(password);
