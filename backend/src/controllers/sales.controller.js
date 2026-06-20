@@ -6,7 +6,7 @@ const { sendSuccess, sendCreated } = require('../utils/responseHelper');
 
 const createSalesOrder = async (req, res, next) => {
   try {
-    const order = await salesService.createSalesOrder(req.body, req.user.userId);
+    const order = await salesService.createSalesOrder(req.body, req.user._id);
     return sendCreated(res, order, 'Sales Order created successfully in Draft status');
   } catch (error) {
     next(error);
@@ -33,7 +33,7 @@ const updateSalesOrder = async (req, res, next) => {
 
 const confirmSalesOrder = async (req, res, next) => {
   try {
-    const order = await salesService.confirmSalesOrder(req.params.id, req.user.userId);
+    const order = await salesService.confirmSalesOrder(req.params.id, req.user._id);
     return sendSuccess(res, order, 'Sales Order confirmed successfully, stock reserved');
   } catch (error) {
     next(error);
@@ -42,7 +42,7 @@ const confirmSalesOrder = async (req, res, next) => {
 
 const cancelSalesOrder = async (req, res, next) => {
   try {
-    const order = await salesService.cancelSalesOrder(req.params.id, req.user.userId);
+    const order = await salesService.cancelSalesOrder(req.params.id, req.user._id);
     return sendSuccess(res, order, 'Sales Order cancelled successfully, stock reservation released');
   } catch (error) {
     next(error);
@@ -83,7 +83,7 @@ const getSalesAnalytics = async (req, res, next) => {
 
 const deliverSalesOrder = async (req, res, next) => {
   try {
-    const order = await salesService.deliverSalesOrder(req.params.id, req.user.userId);
+    const order = await salesService.deliverSalesOrder(req.params.id, req.user._id);
     return sendSuccess(res, order, 'Sales Order fully delivered successfully');
   } catch (error) {
     next(error);
@@ -92,7 +92,7 @@ const deliverSalesOrder = async (req, res, next) => {
 
 const partialDeliverSalesOrder = async (req, res, next) => {
   try {
-    const order = await salesService.partialDeliverSalesOrder(req.params.id, req.body.items, req.user.userId);
+    const order = await salesService.partialDeliverSalesOrder(req.params.id, req.body.items, req.user._id);
     return sendSuccess(res, order, 'Sales Order partially delivered successfully');
   } catch (error) {
     next(error);

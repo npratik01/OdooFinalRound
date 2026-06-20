@@ -20,6 +20,9 @@ const procurementDashboardRoutes = require('./procurementDashboard.routes');
 const bomRoutes = require('./bom.routes');
 const workCenterRoutes = require('./workCenter.routes');
 const manufacturingRoutes = require('./manufacturing.routes');
+// Workflow Orchestration (Enterprise Improvement)
+const notificationRoutes = require('./notification.routes');
+const traceabilityRoutes = require('./traceability.routes');
 
 // Mount all API routes
 router.use('/auth', authRoutes);
@@ -39,6 +42,9 @@ router.use('/procurement', procurementDashboardRoutes);
 router.use('/bom', bomRoutes);
 router.use('/work-centers', workCenterRoutes);
 router.use('/manufacturing', manufacturingRoutes);
+// Workflow Orchestration (Enterprise Improvement)
+router.use('/notifications', notificationRoutes);
+router.use('/traceability', traceabilityRoutes);
 
 module.exports = router;
 

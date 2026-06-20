@@ -5,7 +5,7 @@ const { sendSuccess, sendCreated } = require('../utils/responseHelper');
 
 const processDelivery = async (req, res, next) => {
   try {
-    const delivery = await deliveryService.processDelivery(req.body, req.user.userId);
+    const delivery = await deliveryService.processDelivery(req.body, req.user._id);
     return sendCreated(res, delivery, 'Delivery dispatched successfully, inventory deducted');
   } catch (error) {
     next(error);

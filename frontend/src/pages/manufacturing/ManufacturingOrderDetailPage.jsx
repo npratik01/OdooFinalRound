@@ -7,6 +7,7 @@ import { manufacturingApi } from '../../api/manufacturing.api'
 import { inventoryMovementApi } from '../../api/inventoryMovement.api'
 import { useAuth } from '../../context/AuthContext'
 import { ROLES } from '../../constants/roles'
+import TraceabilityTree from '../../components/common/TraceabilityTree'
 
 const MFG_ROLES = [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.MANUFACTURING_USER]
 
@@ -304,6 +305,13 @@ export default function ManufacturingOrderDetailPage() {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Traceability Flow Tree (Orchestration Brain) */}
+      {mo.status !== 'DRAFT' && (
+        <div className="bg-slate-800/60 border border-slate-700/50 rounded-2xl p-6">
+          <TraceabilityTree docId={mo._id} />
         </div>
       )}
 

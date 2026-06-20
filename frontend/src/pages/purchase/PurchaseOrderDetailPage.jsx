@@ -5,6 +5,7 @@ import toast from 'react-hot-toast'
 import { purchaseApi } from '../../api/purchase.api'
 import { useAuth } from '../../context/AuthContext'
 import { ROLES } from '../../constants/roles'
+import TraceabilityTree from '../../components/common/TraceabilityTree'
 
 const PURCHASE_ROLES = [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.PURCHASE_USER]
 
@@ -221,6 +222,12 @@ export default function PurchaseOrderDetailPage() {
               </div>
             ))}
           </div>
+        </div>
+      )}
+      {/* Traceability Flow Tree (Orchestration Brain) */}
+      {po.status !== 'Draft' && (
+        <div className="bg-slate-800/60 border border-slate-700/50 rounded-2xl p-6">
+          <TraceabilityTree docId={po._id} />
         </div>
       )}
     </div>

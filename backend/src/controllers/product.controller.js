@@ -22,7 +22,7 @@ const getProductById = async (req, res, next) => {
 
 const createProduct = async (req, res, next) => {
   try {
-    const product = await productService.createProduct(req.body, req.user.userId);
+    const product = await productService.createProduct(req.body, req.user._id);
     return sendCreated(res, { message: 'Product created successfully', data: product });
   } catch (err) {
     if (err.statusCode) return sendError(res, { statusCode: err.statusCode, message: err.message });

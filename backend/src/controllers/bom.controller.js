@@ -7,7 +7,7 @@ const logger = require('../utils/logger');
 // ─── Create BoM ───────────────────────────────────────────────────────────────
 const createBom = async (req, res) => {
   try {
-    const bom = await bomService.createBom(req.body, req.user.userId);
+    const bom = await bomService.createBom(req.body, req.user._id);
     return sendCreated(res, { data: bom, message: `Bill of Materials created: ${bom.bomCode}` });
   } catch (err) {
     logger.error('createBom error:', err);

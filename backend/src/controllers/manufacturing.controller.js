@@ -8,7 +8,7 @@ const logger = require('../utils/logger');
 // ─── Create Manufacturing Order ───────────────────────────────────────────────
 const createManufacturingOrder = async (req, res) => {
   try {
-    const mo = await manufacturingService.createManufacturingOrder(req.body, req.user.userId);
+    const mo = await manufacturingService.createManufacturingOrder(req.body, req.user._id);
     return sendCreated(res, { data: mo, message: `Manufacturing Order created: ${mo.moNumber}` });
   } catch (err) {
     logger.error('createManufacturingOrder error:', err);
@@ -58,7 +58,7 @@ const confirmManufacturingOrder = async (req, res) => {
 // ─── Start Production ─────────────────────────────────────────────────────────
 const startProduction = async (req, res) => {
   try {
-    const mo = await manufacturingService.startProduction(req.params.id, req.user.userId);
+    const mo = await manufacturingService.startProduction(req.params.id, req.user._id);
     return sendSuccess(res, { data: mo, message: `Production started for Manufacturing Order: ${mo.moNumber}` });
   } catch (err) {
     logger.error('startProduction error:', err);
@@ -71,7 +71,7 @@ const startProduction = async (req, res) => {
 // ─── Produce Output ───────────────────────────────────────────────────────────
 const produceOutput = async (req, res) => {
   try {
-    const mo = await manufacturingService.produceOutput(req.params.id, req.body, req.user.userId);
+    const mo = await manufacturingService.produceOutput(req.params.id, req.body, req.user._id);
     return sendSuccess(res, { data: mo, message: `Production output recorded for Manufacturing Order: ${mo.moNumber}` });
   } catch (err) {
     logger.error('produceOutput error:', err);
@@ -84,7 +84,7 @@ const produceOutput = async (req, res) => {
 // ─── Cancel Manufacturing Order ───────────────────────────────────────────────
 const cancelManufacturingOrder = async (req, res) => {
   try {
-    const mo = await manufacturingService.cancelManufacturingOrder(req.params.id, req.user.userId);
+    const mo = await manufacturingService.cancelManufacturingOrder(req.params.id, req.user._id);
     return sendSuccess(res, { data: mo, message: `Manufacturing Order cancelled: ${mo.moNumber}` });
   } catch (err) {
     logger.error('cancelManufacturingOrder error:', err);

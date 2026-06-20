@@ -23,6 +23,7 @@ import { formatCurrency, formatDateTime } from '../../utils/formatters'
 import { useAuth } from '../../context/AuthContext'
 import { ROLES } from '../../constants/roles'
 import toast from 'react-hot-toast'
+import TraceabilityTree from '../../components/common/TraceabilityTree'
 
 const statusColorMap = {
   Draft: 'slate',
@@ -363,6 +364,13 @@ const SalesOrderDetailPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Traceability Flow Tree (Orchestration Brain) */}
+      {order.status !== 'Draft' && (
+        <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+          <TraceabilityTree docId={order._id} />
+        </div>
+      )}
 
       {/* Process Delivery Modal */}
       <Modal

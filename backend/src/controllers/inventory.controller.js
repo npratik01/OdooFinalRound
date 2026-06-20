@@ -45,7 +45,7 @@ const increaseStock = async (req, res, next) => {
     const inventory = await inventoryService.increaseStock(
       req.params.productId,
       Number(qty),
-      req.user.userId,
+      req.user._id,
       'Inventory',
       null,
       `Stock increased by ${qty} units via API`
@@ -63,7 +63,7 @@ const decreaseStock = async (req, res, next) => {
     const inventory = await inventoryService.decreaseStock(
       req.params.productId,
       Number(qty),
-      req.user.userId,
+      req.user._id,
       'Inventory',
       null,
       `Stock decreased by ${qty} units via API`
@@ -81,7 +81,7 @@ const reserveStock = async (req, res, next) => {
     const inventory = await inventoryService.reserveStock(
       req.params.productId,
       Number(qty),
-      req.user.userId,
+      req.user._id,
       'Inventory',
       null,
       `${qty} units reserved via API`
@@ -99,7 +99,7 @@ const releaseStock = async (req, res, next) => {
     const inventory = await inventoryService.releaseStock(
       req.params.productId,
       Number(qty),
-      req.user.userId,
+      req.user._id,
       'Inventory',
       null,
       `${qty} units released via API`

@@ -47,7 +47,7 @@ const updateUserStatus = async (req, res, next) => {
     if (typeof isActive !== 'boolean') {
       return sendError(res, { statusCode: 400, message: 'isActive must be a boolean value' });
     }
-    const user = await userService.updateUserStatus(req.params.id, isActive, req.user.userId);
+    const user = await userService.updateUserStatus(req.params.id, isActive, req.user._id);
     return sendSuccess(res, {
       message: `User ${isActive ? 'activated' : 'deactivated'} successfully`,
       data: user,
@@ -60,7 +60,7 @@ const updateUserStatus = async (req, res, next) => {
 
 const deleteUser = async (req, res, next) => {
   try {
-    await userService.deleteUser(req.params.id, req.user.userId);
+    await userService.deleteUser(req.params.id, req.user._id);
     return sendSuccess(res, { message: 'User deactivated successfully' });
   } catch (err) {
     if (err.statusCode) return sendError(res, { statusCode: err.statusCode, message: err.message });

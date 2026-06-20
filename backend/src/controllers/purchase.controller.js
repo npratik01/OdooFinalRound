@@ -31,7 +31,7 @@ const getPurchaseOrderById = async (req, res) => {
 
 const createPurchaseOrder = async (req, res) => {
   try {
-    const po = await purchaseService.createPurchaseOrder(req.body, req.user.userId);
+    const po = await purchaseService.createPurchaseOrder(req.body, req.user._id);
     return sendCreated(res, { data: po, message: `Purchase Order created: ${po.poNumber}` });
   } catch (err) {
     logger.error('createPurchaseOrder error:', err);
@@ -80,7 +80,7 @@ const cancelPurchaseOrder = async (req, res) => {
 
 const receiveGoods = async (req, res) => {
   try {
-    const result = await purchaseService.receiveGoods(req.params.id, req.body, req.user.userId);
+    const result = await purchaseService.receiveGoods(req.params.id, req.body, req.user._id);
     return sendCreated(res, {
       data: result,
       message: `Goods Receipt created: ${result.goodsReceipt.grNumber}. PO Status: ${result.purchaseOrder.status}`,

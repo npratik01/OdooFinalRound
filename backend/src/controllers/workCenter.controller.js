@@ -7,7 +7,7 @@ const logger = require('../utils/logger');
 // ─── Create Work Center ───────────────────────────────────────────────────────
 const createWorkCenter = async (req, res) => {
   try {
-    const wc = await workCenterService.createWorkCenter(req.body, req.user.userId);
+    const wc = await workCenterService.createWorkCenter(req.body, req.user._id);
     return sendCreated(res, { data: wc, message: `Work Center created: ${wc.code}` });
   } catch (err) {
     logger.error('createWorkCenter error:', err);

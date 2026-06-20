@@ -134,35 +134,13 @@ const confirmSalesOrder = async (id, userId) => {
     throw { statusCode: 400, message: `Cannot confirm order in '${order.status}' status. Status must be Draft.` };
   }
 
-  // 1. Stock availability validation
-  for (const item of order.items) {
-    const inventory = await Inventory.findOne({ productId: item.productId });
-    if (!inventory) {
-      throw { statusCode: 400, message: `Inventory record does not exist for product ID ${item.productId}` };
-    }
-    const freeQty = Math.max(0, inventory.onHandQty - inventory.reservedQty);
-    if (item.quantity > freeQty) {
-      throw {
-        statusCode: 400,
-        message: `Insufficient stock for product. Requested: ${item.quantity}, Available Free Qty: ${freeQty}`
-      };
-    }
-  }
-
-  // 2. Perform Stock Reservations
-  for (const item of order.items) {
-    await inventoryService.reserveStock(
-      item.productId,
-      item.quantity,
-      userId,
-      'SalesOrder',
-      order._id,
-      `Reserved stock for Sales Order ${order.soNumber}`
-    );
-  }
-
+  // 1. Confirm the order status first
   order.status = 'Confirmed';
   await order.save();
+
+  // 2. Invoke central ERP workflow orchestration brain to reserve stock / trigger auto-replenishment (PO/MO)
+  const erpWorkflowService = require('./erpWorkflow.service');
+  await erpWorkflowService.handleSalesOrderConfirmed(order._id, userId);
 
   return getSalesOrderById(order._id);
 };
