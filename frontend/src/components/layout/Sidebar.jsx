@@ -2,20 +2,23 @@ import { NavLink } from 'react-router-dom'
 import {
   LayoutDashboard, Package, Warehouse, Users,
   ChevronRight, Activity, LogOut, FileText,
-  ArrowLeftRight, UserCheck, TrendingUp, Truck
+  ArrowLeftRight, UserCheck, TrendingUp, Truck, BarChart2
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { ROLES } from '../../constants/roles'
 
 // ─── Nav configuration with role-based visibility ────────────────────────────
-// roles: undefined  → visible to all authenticated users
-// roles: [...]      → visible ONLY to listed roles
+// ADMIN / BUSINESS_OWNER : Full access — all nav items visible
+// SALES_USER             : Customers, Sales Orders, Sales Dashboard, Sales Analytics
+// PURCHASE_USER          : No sales module access → sees Dashboard only
+// MANUFACTURING_USER     : No sales module access → sees Dashboard only
+// INVENTORY_MANAGER      : Inventory, Stock Movements, Sales Orders (read-only)
 const navItems = [
   {
     to: '/dashboard',
     label: 'Dashboard',
     icon: LayoutDashboard,
-    // All roles see dashboard
+    // All roles see Dashboard
   },
   {
     to: '/products',
@@ -48,9 +51,15 @@ const navItems = [
     roles: [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.SALES_USER, ROLES.INVENTORY_MANAGER],
   },
   {
+    to: '/sales-dashboard',
+    label: 'Sales Dashboard',
+    icon: Truck,
+    roles: [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.SALES_USER],
+  },
+  {
     to: '/sales-analytics',
     label: 'Sales Analytics',
-    icon: TrendingUp,
+    icon: BarChart2,
     roles: [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.SALES_USER],
   },
   {
@@ -118,7 +127,7 @@ const Sidebar = () => {
         <div className="px-3 py-1.5 rounded-lg bg-slate-800/50">
           <p className="text-xs text-slate-500 font-medium uppercase tracking-wider">Signed in as</p>
           <span className="inline-flex items-center gap-1.5 mt-0.5 text-xs font-semibold text-primary-400">
-            <span className="w-1.5 h-1.5 rounded-full bg-primary-400 animate-pulse"></span>
+            <span className="w-1.5 h-1.5 rounded-full bg-primary-400 animate-pulse" />
             {user?.role?.replace(/_/g, ' ')}
           </span>
         </div>

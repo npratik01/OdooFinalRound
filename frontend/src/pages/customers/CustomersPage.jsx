@@ -192,12 +192,12 @@ const CustomersPage = () => {
 
       {isLoading ? (
         <LoadingSpinner />
-      ) : !data?.customers || data.customers.length === 0 ? (
+      ) : !data?.data || data.data.length === 0 ? (
         <EmptyState title="No customers found" description="Try refining your search terms or create a new customer record." />
       ) : (
         <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
           <DataTable
-            data={data.customers}
+            data={data.data}
             columns={columns}
             pagination={data.meta}
             onPageChange={(page) => setParams((prev) => ({ ...prev, page }))}

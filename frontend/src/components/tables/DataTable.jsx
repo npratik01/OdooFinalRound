@@ -27,21 +27,29 @@ const DataTable = ({
       <table className="table">
         <thead>
           <tr>
-            {columns.map((col) => (
-              <th key={col.key} style={{ width: col.width }}>
-                {col.label}
-              </th>
-            ))}
+            {columns.map((col) => {
+              const key = col.key || col.accessor;
+              const label = col.label || col.header;
+              return (
+                <th key={key} style={{ width: col.width }}>
+                  {label}
+                </th>
+              );
+            })}
           </tr>
         </thead>
         <tbody>
           {data.map((row) => (
             <tr key={row[keyField]}>
-              {columns.map((col) => (
-                <td key={col.key}>
-                  {col.render ? col.render(row[col.key], row) : (row[col.key] ?? '—')}
-                </td>
-              ))}
+              {columns.map((col) => {
+                const key = col.key || col.accessor;
+                const val = row[key];
+                return (
+                  <td key={key}>
+                    {col.render ? col.render(val, row) : (val ?? '—')}
+                  </td>
+                );
+              })}
             </tr>
           ))}
         </tbody>

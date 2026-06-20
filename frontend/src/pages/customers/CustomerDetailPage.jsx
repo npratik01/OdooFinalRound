@@ -141,17 +141,17 @@ const CustomerDetailPage = () => {
         <div className="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-6">
           <div className="flex items-center justify-between pb-4 border-b border-slate-800">
             <h2 className="font-semibold text-white">Sales Order History</h2>
-            <Badge color="primary">{salesData?.orders?.length || 0} Orders</Badge>
+            <Badge color="primary">{salesData?.data?.length || 0} Orders</Badge>
           </div>
 
-          {!salesData?.orders || salesData.orders.length === 0 ? (
+          {!salesData?.data || salesData.data.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-sm text-slate-500">No orders created for this customer yet.</p>
             </div>
           ) : (
             <div className="overflow-hidden rounded-xl border border-slate-800">
               <DataTable
-                data={salesData.orders}
+                data={salesData.data}
                 columns={salesColumns}
                 onPageChange={() => {}} // Simple history table: pagination is clientside or simple
               />

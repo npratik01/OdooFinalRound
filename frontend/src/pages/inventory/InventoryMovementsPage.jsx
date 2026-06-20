@@ -86,12 +86,12 @@ const InventoryMovementsPage = () => {
         </div>
       </div>
 
-      {!data?.movements || data.movements.length === 0 ? (
+      {!data?.data || data.data.length === 0 ? (
         <EmptyState title="No movements logged yet" description="All manual adjustments, confirmations, and deliveries are tracked here." />
       ) : (
         <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
           <DataTable
-            data={data.movements}
+            data={data.data}
             columns={columns}
             pagination={data.meta}
             onPageChange={(page) => setParams((prev) => ({ ...prev, page }))}

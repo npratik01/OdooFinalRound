@@ -17,11 +17,19 @@ import CustomerDetailPage from '../pages/customers/CustomerDetailPage'
 import SalesOrdersPage from '../pages/sales/SalesOrdersPage'
 import SalesOrderDetailPage from '../pages/sales/SalesOrderDetailPage'
 import SalesAnalyticsPage from '../pages/sales/SalesAnalyticsPage'
+import SalesDashboardPage from '../pages/sales/SalesDashboardPage'
 
 // ─── Role Groups (mirrors backend permissions.js) ────────────────────────────
-const SALES_ROLES = [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.SALES_USER]
-const SALES_READ_ROLES = [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.SALES_USER, ROLES.INVENTORY_MANAGER]
-const INVENTORY_ROLES = [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.INVENTORY_MANAGER]
+// ADMIN + BUSINESS_OWNER: full access
+// SALES_USER: Customers, Sales Orders, Deliveries
+// PURCHASE_USER: No access to sales module
+// MANUFACTURING_USER: No access to sales module
+// INVENTORY_MANAGER: Read-only on inventory, products, sales orders (reservations)
+
+const SALES_ROLES        = [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.SALES_USER]
+const SALES_READ_ROLES   = [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.SALES_USER, ROLES.INVENTORY_MANAGER]
+const INVENTORY_ROLES    = [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.INVENTORY_MANAGER]
+const ANALYTICS_ROLES    = [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.SALES_USER]
 
 const AppRoutes = () => {
   return (
@@ -79,7 +87,7 @@ const AppRoutes = () => {
           }
         />
 
-        {/* Customers — admin, business owner, sales */}
+        {/* Customers — admin, business owner, sales (PURCHASE/MANUFACTURING: no access) */}
         <Route
           path="customers"
           element={
@@ -97,7 +105,7 @@ const AppRoutes = () => {
           }
         />
 
-        {/* Sales Orders — admin, business owner, sales, inventory (read-only for inventory) */}
+        {/* Sales Orders — admin, business owner, sales (read-only for inventory manager) */}
         <Route
           path="sales"
           element={
@@ -115,17 +123,27 @@ const AppRoutes = () => {
           }
         />
 
+        {/* Sales Dashboard — admin, business owner, sales */}
+        <Route
+          path="sales-dashboard"
+          element={
+            <ProtectedRoute allowedRoles={ANALYTICS_ROLES}>
+              <SalesDashboardPage />
+            </ProtectedRoute>
+          }
+        />
+
         {/* Sales Analytics — admin, business owner, sales */}
         <Route
           path="sales-analytics"
           element={
-            <ProtectedRoute allowedRoles={SALES_ROLES}>
+            <ProtectedRoute allowedRoles={ANALYTICS_ROLES}>
               <SalesAnalyticsPage />
             </ProtectedRoute>
           }
         />
 
-        {/* Users — admin only */}
+        {/* Users — admin only (PURCHASE/MANUFACTURING/SALES/INVENTORY: no access) */}
         <Route
           path="users"
           element={
