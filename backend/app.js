@@ -12,13 +12,15 @@ const app = express();
 
 app.use(helmet());
 // CORS - tighten origin list when provided via env CORS_ORIGINS (comma-separated)
-const allowedOrigins = process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',').map(s => s.trim()) : null;
+const allowedOrigins = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(",").map((s) => s.trim())
+  : null;
 const corsOptions = {
   origin: function (origin, callback) {
     if (!origin || !allowedOrigins) return callback(null, true);
     if (allowedOrigins.includes(origin)) return callback(null, true);
-    return callback(new Error('CORS policy: Origin not allowed'), false);
-  }
+    return callback(new Error("CORS policy: Origin not allowed"), false);
+  },
 };
 app.use(cors(corsOptions));
 app.use(express.json());

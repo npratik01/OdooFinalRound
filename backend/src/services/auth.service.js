@@ -1,17 +1,19 @@
-const crypto = require('crypto');
+const crypto = require("crypto");
 const User = require("../models/user.model");
-const RefreshToken = require('../models/refreshToken.model');
+const RefreshToken = require("../models/refreshToken.model");
 const { sign } = require("../utils/jwt");
-const config = require('../config');
+const config = require("../config");
 
 function hashToken(token) {
-  return crypto.createHash('sha256').update(token).digest('hex');
+  return crypto.createHash("sha256").update(token).digest("hex");
 }
 
 async function createRefreshToken(userId) {
-  const token = crypto.randomBytes(64).toString('hex');
+  const token = crypto.randomBytes(64).toString("hex");
   const tokenHash = hashToken(token);
-  const expiresAt = new Date(Date.now() + msFromString(config.refreshTokenExpiresIn));
+  const expiresAt = new Date(
+    Date.now() + msFromString(config.refreshTokenExpiresIn),
+  );
   await RefreshToken.create({ userId, tokenHash, expiresAt });
   return token;
 }
@@ -20,9 +22,9 @@ function msFromString(str) {
   // supports simple formats like '15m', '7d'
   const num = parseInt(str.slice(0, -1), 10);
   const unit = str.slice(-1);
-  if (unit === 'm') return num * 60 * 1000;
-  if (unit === 'h') return num * 60 * 60 * 1000;
-  if (unit === 'd') return num * 24 * 60 * 60 * 1000;
+  if (unit === "m") return num * 60 * 1000;
+  if (unit === "h") return num * 60 * 60 * 1000;
+  if (unit === "d") return num * 24 * 60 * 60 * 1000;
   return num;
 }
 
@@ -57,14 +59,20 @@ async function register(payload) {
 }
 
 async function refreshTokens(providedToken) {
-  if (!providedToken) throw { status: 400, message: 'Refresh token required' };
+  if (!providedToken) throw { status: 400, message: "Refresh token required" };
   const tokenHash = hashToken(providedToken);
   const rt = await RefreshToken.findOne({ tokenHash });
-  if (!rt || rt.revoked) throw { status: 401, message: 'Invalid refresh token' };
-  if (rt.expiresAt < new Date()) throw { status: 401, message: 'Refresh token expired' };
+  if (!rt || rt.revoked)
+    throw { status: 401, message: "Invalid refresh token" };
+  if (rt.expiresAt < new Date())
+    throw { status: 401, message: "Refresh token expired" };
   const user = await User.findById(rt.userId);
-  if (!user) throw { status: 401, message: 'Invalid refresh token' };
-  const payload = { userId: user._id.toString(), email: user.email, role: user.role };
+  if (!user) throw { status: 401, message: "Invalid refresh token" };
+  const payload = {
+    userId: user._id.toString(),
+    email: user.email,
+    role: user.role,
+  };
   const accessToken = sign(payload);
   // Optionally rotate refresh token: revoke old and create new
   rt.revoked = true;
