@@ -6,15 +6,11 @@
  * Run: node seeders/seed.js
  */
 
-const path = require('path');
-
-require('dotenv').config({
-  path: path.resolve(__dirname, '../.env')
-});
+require('dotenv').config();
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
-const User = require('../src/models/User.model');
+const User = require('../src/models/user.model');
 const Product = require('../src/models/Product.model');
 const Inventory = require('../src/models/Inventory.model');
 const Customer = require('../src/models/Customer.model');
@@ -412,7 +408,6 @@ const seedSalesWorkflows = async (users, customers) => {
 const seed = async () => {
   try {
     logger.info('🌱 Starting database seeder...');
-    console.log("Mongo URI:", process.env.MONGO_URI);
     await mongoose.connect(process.env.MONGO_URI);
     logger.info(`✅ Connected to MongoDB: ${process.env.MONGO_URI}`);
 
