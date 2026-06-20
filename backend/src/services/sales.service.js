@@ -151,18 +151,14 @@ const confirmSalesOrder = async (id, userId) => {
 
   // 2. Perform Stock Reservations
   for (const item of order.items) {
-    await inventoryService.reserveStock(item.productId, item.quantity);
-    
-    // Log Reservation movement
-    await movementService.createMovement({
-      productId: item.productId,
-      quantity: -item.quantity, // reserve acts as temporary hold
-      movementType: 'RESERVATION',
-      referenceId: order._id,
-      referenceModel: 'SalesOrder',
-      description: `Reserved stock for Sales Order ${order.soNumber}`,
-      performedBy: userId
-    });
+    await inventoryService.reserveStock(
+      item.productId,
+      item.quantity,
+      userId,
+      'SalesOrder',
+      order._id,
+      `Reserved stock for Sales Order ${order.soNumber}`
+    );
   }
 
   order.status = 'Confirmed';
@@ -205,17 +201,14 @@ const cancelSalesOrder = async (id, userId) => {
       const remainingReserved = Math.max(0, item.quantity - alreadyShipped);
 
       if (remainingReserved > 0) {
-        await inventoryService.releaseStock(item.productId._id || item.productId, remainingReserved);
-
-        await movementService.createMovement({
-          productId: item.productId._id || item.productId,
-          quantity: remainingReserved,
-          movementType: 'RESERVATION_RELEASE',
-          referenceId: order._id,
-          referenceModel: 'SalesOrder',
-          description: `Released ${remainingReserved} reserved units due to cancellation of SO ${order.soNumber}`,
-          performedBy: userId
-        });
+        await inventoryService.releaseStock(
+          item.productId._id || item.productId,
+          remainingReserved,
+          userId,
+          'SalesOrder',
+          order._id,
+          `Released ${remainingReserved} reserved units due to cancellation of SO ${order.soNumber}`
+        );
       }
     }
   }
@@ -262,11 +255,79 @@ const getAllSalesOrders = async (query = {}) => {
   };
 };
 
+/**
+ * Fully delivers all remaining quantities of a Sales Order.
+ */
+const deliverSalesOrder = async (id, userId) => {
+  const order = await SalesOrder.findById(id);
+  if (!order) {
+    throw { statusCode: 404, message: 'Sales Order not found' };
+  }
+
+  if (!['Confirmed', 'Partially Delivered'].includes(order.status)) {
+    throw {
+      statusCode: 400,
+      message: `Cannot process delivery for order in '${order.status}' status. Order must be Confirmed or Partially Delivered.`
+    };
+  }
+
+  // Find previous deliveries to calculate remaining quantity
+  const previousDeliveries = await Delivery.find({ soId: id });
+  const deliveredMap = {};
+  for (const del of previousDeliveries) {
+    for (const item of del.items) {
+      const pid = item.productId.toString();
+      deliveredMap[pid] = (deliveredMap[pid] || 0) + item.quantityShipped;
+    }
+  }
+
+  const itemsToShip = [];
+  for (const soItem of order.items) {
+    const pidStr = soItem.productId.toString();
+    const alreadyShipped = deliveredMap[pidStr] || 0;
+    const remaining = soItem.quantity - alreadyShipped;
+
+    if (remaining > 0) {
+      itemsToShip.push({
+        productId: soItem.productId,
+        quantityShipped: remaining
+      });
+    }
+  }
+
+  if (itemsToShip.length === 0) {
+    throw { statusCode: 400, message: 'All items of this Sales Order have already been fully delivered.' };
+  }
+
+  const deliveryService = require('./delivery.service');
+  await deliveryService.processDelivery({
+    soId: id,
+    items: itemsToShip
+  }, userId);
+
+  return getSalesOrderById(id);
+};
+
+/**
+ * Partially delivers specific quantities of a Sales Order.
+ */
+const partialDeliverSalesOrder = async (id, items, userId) => {
+  const deliveryService = require('./delivery.service');
+  await deliveryService.processDelivery({
+    soId: id,
+    items
+  }, userId);
+
+  return getSalesOrderById(id);
+};
+
 module.exports = {
   createSalesOrder,
   getSalesOrderById,
   updateSalesOrder,
   confirmSalesOrder,
   cancelSalesOrder,
-  getAllSalesOrders
+  getAllSalesOrders,
+  deliverSalesOrder,
+  partialDeliverSalesOrder
 };

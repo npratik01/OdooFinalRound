@@ -81,6 +81,24 @@ const getSalesAnalytics = async (req, res, next) => {
   }
 };
 
+const deliverSalesOrder = async (req, res, next) => {
+  try {
+    const order = await salesService.deliverSalesOrder(req.params.id, req.user.userId);
+    return sendSuccess(res, order, 'Sales Order fully delivered successfully');
+  } catch (error) {
+    next(error);
+  }
+};
+
+const partialDeliverSalesOrder = async (req, res, next) => {
+  try {
+    const order = await salesService.partialDeliverSalesOrder(req.params.id, req.body.items, req.user.userId);
+    return sendSuccess(res, order, 'Sales Order partially delivered successfully');
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createSalesOrder,
   getSalesOrderById,
@@ -89,5 +107,7 @@ module.exports = {
   cancelSalesOrder,
   getAllSalesOrders,
   getSalesStats,
-  getSalesAnalytics
+  getSalesAnalytics,
+  deliverSalesOrder,
+  partialDeliverSalesOrder
 };

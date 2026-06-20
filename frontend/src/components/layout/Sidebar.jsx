@@ -1,19 +1,64 @@
 import { NavLink } from 'react-router-dom'
 import {
-  LayoutDashboard, Package, Warehouse, Users, ChevronRight,
-  Activity, LogOut, FileText, ArrowLeftRight, UserCheck
+  LayoutDashboard, Package, Warehouse, Users,
+  ChevronRight, Activity, LogOut, FileText,
+  ArrowLeftRight, UserCheck, TrendingUp, Truck
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { ROLES } from '../../constants/roles'
 
+// ─── Nav configuration with role-based visibility ────────────────────────────
+// roles: undefined  → visible to all authenticated users
+// roles: [...]      → visible ONLY to listed roles
 const navItems = [
-  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/products', label: 'Products', icon: Package },
-  { to: '/inventory', label: 'Inventory', icon: Warehouse },
-  { to: '/inventory/movements', label: 'Stock Movements', icon: ArrowLeftRight },
-  { to: '/customers', label: 'Customers', icon: UserCheck },
-  { to: '/sales', label: 'Sales Orders', icon: FileText },
-  { to: '/users', label: 'Users', icon: Users, roles: [ROLES.ADMIN] },
+  {
+    to: '/dashboard',
+    label: 'Dashboard',
+    icon: LayoutDashboard,
+    // All roles see dashboard
+  },
+  {
+    to: '/products',
+    label: 'Products',
+    icon: Package,
+    roles: [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.SALES_USER, ROLES.INVENTORY_MANAGER],
+  },
+  {
+    to: '/inventory',
+    label: 'Inventory',
+    icon: Warehouse,
+    roles: [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.INVENTORY_MANAGER],
+  },
+  {
+    to: '/inventory/movements',
+    label: 'Stock Movements',
+    icon: ArrowLeftRight,
+    roles: [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.INVENTORY_MANAGER],
+  },
+  {
+    to: '/customers',
+    label: 'Customers',
+    icon: UserCheck,
+    roles: [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.SALES_USER],
+  },
+  {
+    to: '/sales',
+    label: 'Sales Orders',
+    icon: FileText,
+    roles: [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.SALES_USER, ROLES.INVENTORY_MANAGER],
+  },
+  {
+    to: '/sales-analytics',
+    label: 'Sales Analytics',
+    icon: TrendingUp,
+    roles: [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.SALES_USER],
+  },
+  {
+    to: '/users',
+    label: 'Users',
+    icon: Users,
+    roles: [ROLES.ADMIN],
+  },
 ]
 
 const Sidebar = () => {
@@ -28,57 +73,71 @@ const Sidebar = () => {
       {/* Logo */}
       <div className="px-6 py-5 border-b border-slate-800">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary-500 to-indigo-600 flex items-center justify-center shadow-lg">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-primary-500/20">
             <Activity size={18} className="text-white" />
           </div>
           <div>
             <h1 className="font-bold text-white text-sm leading-tight">Mini ERP</h1>
-            <p className="text-xs text-slate-500 leading-tight">Manufacturing</p>
+            <p className="text-xs text-slate-500 leading-tight">Phase 2 — Sales</p>
           </div>
         </div>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-3 py-4 space-y-1">
+      <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
         {visibleItems.map(({ to, label, icon: Icon }) => (
           <NavLink
             key={to}
             to={to}
+            end={to === '/inventory'}
             className={({ isActive }) =>
               `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group
               ${isActive
-                ? 'bg-primary-600/20 text-primary-400 border border-primary-500/30'
+                ? 'bg-primary-600/20 text-primary-400 border border-primary-500/30 shadow-sm shadow-primary-500/10'
                 : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800'
               }`
             }
           >
             {({ isActive }) => (
               <>
-                <Icon size={18} className={isActive ? 'text-primary-400' : 'text-slate-500 group-hover:text-slate-300'} />
-                <span className="flex-1">{label}</span>
-                {isActive && <ChevronRight size={14} className="text-primary-400" />}
+                <Icon
+                  size={17}
+                  className={isActive ? 'text-primary-400' : 'text-slate-500 group-hover:text-slate-300'}
+                />
+                <span className="flex-1 truncate">{label}</span>
+                {isActive && <ChevronRight size={13} className="text-primary-400 shrink-0" />}
               </>
             )}
           </NavLink>
         ))}
       </nav>
 
-      {/* User section */}
-      <div className="px-3 py-4 border-t border-slate-800 space-y-1">
+      {/* Role Badge + User section */}
+      <div className="px-3 py-4 border-t border-slate-800 space-y-1.5">
+        {/* Role indicator */}
+        <div className="px-3 py-1.5 rounded-lg bg-slate-800/50">
+          <p className="text-xs text-slate-500 font-medium uppercase tracking-wider">Signed in as</p>
+          <span className="inline-flex items-center gap-1.5 mt-0.5 text-xs font-semibold text-primary-400">
+            <span className="w-1.5 h-1.5 rounded-full bg-primary-400 animate-pulse"></span>
+            {user?.role?.replace(/_/g, ' ')}
+          </span>
+        </div>
+
         <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-slate-800">
           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold shrink-0">
             {user?.name?.charAt(0)?.toUpperCase() || 'U'}
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-white truncate">{user?.name}</p>
-            <p className="text-xs text-slate-500 truncate">{user?.role?.replace('_', ' ')}</p>
+            <p className="text-xs text-slate-500 truncate">{user?.email}</p>
           </div>
         </div>
+
         <button
           onClick={logout}
           className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-all duration-200"
         >
-          <LogOut size={16} />
+          <LogOut size={15} />
           Sign Out
         </button>
       </div>

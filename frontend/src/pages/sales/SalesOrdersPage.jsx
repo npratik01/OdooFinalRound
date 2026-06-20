@@ -70,6 +70,11 @@ const SalesOrdersPage = () => {
     return items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0)
   }
 
+  const getProductFreeStock = (productId) => {
+    const p = productsData?.products?.find(prod => prod._id === productId)
+    return p && p.inventory ? p.inventory.freeToUseQty : 0
+  }
+
   const handleCreateOrder = (e) => {
     e.preventDefault()
     if (!selectedCustomerId) {
@@ -255,6 +260,15 @@ const SalesOrdersPage = () => {
                         <option key={p._id} value={p._id}>{p.productName} ({p.sku})</option>
                       ))}
                     </select>
+                    {item.productId && (() => {
+                      const freeStock = getProductFreeStock(item.productId)
+                      const isAvailable = freeStock >= item.quantity
+                      return (
+                        <span className={`text-xs font-semibold mt-1 block ${isAvailable ? 'text-emerald-405 text-emerald-400' : 'text-rose-400'}`}>
+                          Available: {freeStock} units {isAvailable ? '(In Stock)' : '(Shortage!)'}
+                        </span>
+                      )
+                    })()}
                   </div>
                   <div className="w-24">
                     <Input

@@ -110,18 +110,14 @@ const processDelivery = async (deliveryData, userId) => {
   // 4. Update Inventory & create log entries
   for (const item of validatedItems) {
     // Deducts on-hand stock and releases reservedQty simultaneously
-    await inventoryService.shipStock(item.productId, item.quantityShipped);
-
-    // Record inventory movement
-    await movementService.createMovement({
-      productId: item.productId,
-      quantity: -item.quantityShipped, // negative represents physical departure
-      movementType: 'DELIVERY',
-      referenceId: delivery._id,
-      referenceModel: 'Delivery',
-      description: `Shipped stock for Delivery ${deliveryNumber} (SO: ${order.soNumber})`,
-      performedBy: userId
-    });
+    await inventoryService.shipStock(
+      item.productId,
+      item.quantityShipped,
+      userId,
+      'Delivery',
+      delivery._id,
+      `Shipped stock for Delivery ${deliveryNumber} (SO: ${order.soNumber})`
+    );
   }
 
   // 5. Update Sales Order status

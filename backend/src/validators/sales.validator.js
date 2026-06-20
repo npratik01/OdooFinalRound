@@ -67,8 +67,26 @@ const processDeliverySchema = Joi.object({
   })
 });
 
+const partialDeliverySchema = Joi.object({
+  items: Joi.array().items(
+    Joi.object({
+      productId: objectIdSchema.required().messages({
+        'any.required': 'Product ID is required'
+      }),
+      quantityShipped: Joi.number().integer().min(1).required().messages({
+        'number.min': 'Quantity shipped must be at least 1',
+        'any.required': 'Quantity shipped is required'
+      })
+    })
+  ).min(1).required().messages({
+    'array.min': 'Delivery must contain at least one item',
+    'any.required': 'Items are required'
+  })
+});
+
 module.exports = {
   createSalesOrderSchema,
   updateSalesOrderSchema,
-  processDeliverySchema
+  processDeliverySchema,
+  partialDeliverySchema
 };

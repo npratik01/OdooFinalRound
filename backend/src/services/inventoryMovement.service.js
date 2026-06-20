@@ -21,7 +21,7 @@ const getAllMovements = async (query = {}) => {
   const filter = {};
   if (query.productId) filter.productId = query.productId;
   if (query.movementType) filter.movementType = query.movementType;
-  if (query.referenceModel) filter.referenceModel = query.referenceModel;
+  if (query.referenceType) filter.referenceType = query.referenceType;
 
   const [movements, total] = await Promise.all([
     InventoryMovement.find(filter)
@@ -29,7 +29,7 @@ const getAllMovements = async (query = {}) => {
       .skip(skip)
       .limit(limit)
       .populate('productId', 'productName sku')
-      .populate('performedBy', 'name role'),
+      .populate('createdBy', 'name role'),
     InventoryMovement.countDocuments(filter)
   ]);
 

@@ -50,7 +50,7 @@ const updateStockStatus = async (productId) => {
  * Increases on-hand quantity by a given amount.
  * Used for: goods receipt, production output, manual adjustment (increase).
  */
-const increaseStock = async (productId, qty) => {
+const increaseStock = async (productId, qty, userId = null, referenceType = 'Inventory', referenceId = null, remarks = 'Stock Adjustment (Increase)') => {
   if (!Number.isInteger(qty) || qty <= 0) {
     throw { statusCode: 400, message: 'Quantity to increase must be a positive integer' };
   }
@@ -60,21 +60,33 @@ const increaseStock = async (productId, qty) => {
     throw { statusCode: 404, message: 'Inventory record not found for this product' };
   }
 
+  const previousQty = inventory.onHandQty;
   inventory.onHandQty += qty;
   inventory.stockStatus = checkLowStock(inventory)
     ? STOCK_STATUS.LOW_STOCK
     : STOCK_STATUS.NORMAL;
 
   await inventory.save({ validateBeforeSave: false });
+
+  if (userId) {
+    const movementService = require('./inventoryMovement.service');
+    await movementService.createMovement({
+      productId,
+      movementType: 'STOCK_ADJUSTMENT',
+      quantity: qty,
+      previousQty,
+      newQty: inventory.onHandQty,
+      referenceType,
+      referenceId: referenceId || inventory._id,
+      remarks,
+      createdBy: userId
+    });
+  }
+
   return populatedInventory(productId);
 };
 
-/**
- * Decreases on-hand quantity by a given amount.
- * Used for: goods issue, sales dispatch, manual adjustment (decrease).
- * Guards against going below reservedQty.
- */
-const decreaseStock = async (productId, qty) => {
+const decreaseStock = async (productId, qty, userId = null, referenceType = 'Inventory', referenceId = null, remarks = 'Stock Adjustment (Decrease)') => {
   if (!Number.isInteger(qty) || qty <= 0) {
     throw { statusCode: 400, message: 'Quantity to decrease must be a positive integer' };
   }
@@ -92,20 +104,33 @@ const decreaseStock = async (productId, qty) => {
     };
   }
 
+  const previousQty = inventory.onHandQty;
   inventory.onHandQty -= qty;
   inventory.stockStatus = checkLowStock(inventory)
     ? STOCK_STATUS.LOW_STOCK
     : STOCK_STATUS.NORMAL;
 
   await inventory.save({ validateBeforeSave: false });
+
+  if (userId) {
+    const movementService = require('./inventoryMovement.service');
+    await movementService.createMovement({
+      productId,
+      movementType: 'STOCK_ADJUSTMENT',
+      quantity: -qty,
+      previousQty,
+      newQty: inventory.onHandQty,
+      referenceType,
+      referenceId: referenceId || inventory._id,
+      remarks,
+      createdBy: userId
+    });
+  }
+
   return populatedInventory(productId);
 };
 
-/**
- * Reserves a quantity from free-to-use stock.
- * Used for: sales orders, manufacturing reservations.
- */
-const reserveStock = async (productId, qty) => {
+const reserveStock = async (productId, qty, userId = null, referenceType = 'SalesOrder', referenceId = null, remarks = 'Sales Reservation') => {
   if (!Number.isInteger(qty) || qty <= 0) {
     throw { statusCode: 400, message: 'Quantity to reserve must be a positive integer' };
   }
@@ -123,17 +148,29 @@ const reserveStock = async (productId, qty) => {
     };
   }
 
+  const previousQty = inventory.reservedQty;
   inventory.reservedQty += qty;
-  // reserving does not change onHandQty or stockStatus
   await inventory.save({ validateBeforeSave: false });
+
+  if (userId) {
+    const movementService = require('./inventoryMovement.service');
+    await movementService.createMovement({
+      productId,
+      movementType: 'SALES_RESERVATION',
+      quantity: qty,
+      previousQty,
+      newQty: inventory.reservedQty,
+      referenceType,
+      referenceId: referenceId || inventory._id,
+      remarks,
+      createdBy: userId
+    });
+  }
+
   return populatedInventory(productId);
 };
 
-/**
- * Releases previously reserved stock back to free-to-use pool.
- * Used for: cancelled orders, released reservations.
- */
-const releaseStock = async (productId, qty) => {
+const releaseStock = async (productId, qty, userId = null, referenceType = 'SalesOrder', referenceId = null, remarks = 'Reservation Release') => {
   if (!Number.isInteger(qty) || qty <= 0) {
     throw { statusCode: 400, message: 'Quantity to release must be a positive integer' };
   }
@@ -150,16 +187,29 @@ const releaseStock = async (productId, qty) => {
     };
   }
 
+  const previousQty = inventory.reservedQty;
   inventory.reservedQty -= qty;
   await inventory.save({ validateBeforeSave: false });
+
+  if (userId) {
+    const movementService = require('./inventoryMovement.service');
+    await movementService.createMovement({
+      productId,
+      movementType: 'RESERVATION_RELEASE',
+      quantity: -qty,
+      previousQty,
+      newQty: inventory.reservedQty,
+      referenceType,
+      referenceId: referenceId || inventory._id,
+      remarks,
+      createdBy: userId
+    });
+  }
+
   return populatedInventory(productId);
 };
 
-/**
- * Deducts stock from on-hand and releases reserved quantity simultaneously.
- * Used for: delivery shipments.
- */
-const shipStock = async (productId, qty) => {
+const shipStock = async (productId, qty, userId = null, referenceType = 'Delivery', referenceId = null, remarks = 'Sales Delivery') => {
   if (!Number.isInteger(qty) || qty <= 0) {
     throw { statusCode: 400, message: 'Quantity to ship must be a positive integer' };
   }
@@ -183,6 +233,7 @@ const shipStock = async (productId, qty) => {
     };
   }
 
+  const previousQty = inventory.onHandQty;
   inventory.onHandQty -= qty;
   inventory.reservedQty -= qty;
   inventory.stockStatus = checkLowStock(inventory)
@@ -190,6 +241,22 @@ const shipStock = async (productId, qty) => {
     : STOCK_STATUS.NORMAL;
 
   await inventory.save({ validateBeforeSave: false });
+
+  if (userId) {
+    const movementService = require('./inventoryMovement.service');
+    await movementService.createMovement({
+      productId,
+      movementType: 'SALES_DELIVERY',
+      quantity: -qty,
+      previousQty,
+      newQty: inventory.onHandQty,
+      referenceType,
+      referenceId: referenceId || inventory._id,
+      remarks,
+      createdBy: userId
+    });
+  }
+
   return populatedInventory(productId);
 };
 

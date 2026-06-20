@@ -60,4 +60,17 @@ router.patch(
   salesController.cancelSalesOrder
 );
 
+router.post(
+  '/:id/deliver',
+  authorize('deliveries', 'create'),
+  salesController.deliverSalesOrder
+);
+
+router.post(
+  '/:id/partial-deliver',
+  authorize('deliveries', 'create'),
+  validate(require('../validators/sales.validator').partialDeliverySchema),
+  salesController.partialDeliverSalesOrder
+);
+
 module.exports = router;

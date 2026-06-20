@@ -42,7 +42,14 @@ const getLowStockItems = async (req, res, next) => {
 const increaseStock = async (req, res, next) => {
   try {
     const { qty } = req.body;
-    const inventory = await inventoryService.increaseStock(req.params.productId, Number(qty));
+    const inventory = await inventoryService.increaseStock(
+      req.params.productId,
+      Number(qty),
+      req.user.userId,
+      'Inventory',
+      null,
+      `Stock increased by ${qty} units via API`
+    );
     return sendSuccess(res, { message: `Stock increased by ${qty} units`, data: inventory });
   } catch (err) {
     if (err.statusCode) return sendError(res, { statusCode: err.statusCode, message: err.message });
@@ -53,7 +60,14 @@ const increaseStock = async (req, res, next) => {
 const decreaseStock = async (req, res, next) => {
   try {
     const { qty } = req.body;
-    const inventory = await inventoryService.decreaseStock(req.params.productId, Number(qty));
+    const inventory = await inventoryService.decreaseStock(
+      req.params.productId,
+      Number(qty),
+      req.user.userId,
+      'Inventory',
+      null,
+      `Stock decreased by ${qty} units via API`
+    );
     return sendSuccess(res, { message: `Stock decreased by ${qty} units`, data: inventory });
   } catch (err) {
     if (err.statusCode) return sendError(res, { statusCode: err.statusCode, message: err.message });
@@ -64,7 +78,14 @@ const decreaseStock = async (req, res, next) => {
 const reserveStock = async (req, res, next) => {
   try {
     const { qty } = req.body;
-    const inventory = await inventoryService.reserveStock(req.params.productId, Number(qty));
+    const inventory = await inventoryService.reserveStock(
+      req.params.productId,
+      Number(qty),
+      req.user.userId,
+      'Inventory',
+      null,
+      `${qty} units reserved via API`
+    );
     return sendSuccess(res, { message: `${qty} units reserved successfully`, data: inventory });
   } catch (err) {
     if (err.statusCode) return sendError(res, { statusCode: err.statusCode, message: err.message });
@@ -75,7 +96,14 @@ const reserveStock = async (req, res, next) => {
 const releaseStock = async (req, res, next) => {
   try {
     const { qty } = req.body;
-    const inventory = await inventoryService.releaseStock(req.params.productId, Number(qty));
+    const inventory = await inventoryService.releaseStock(
+      req.params.productId,
+      Number(qty),
+      req.user.userId,
+      'Inventory',
+      null,
+      `${qty} units released via API`
+    );
     return sendSuccess(res, { message: `${qty} units released successfully`, data: inventory });
   } catch (err) {
     if (err.statusCode) return sendError(res, { statusCode: err.statusCode, message: err.message });

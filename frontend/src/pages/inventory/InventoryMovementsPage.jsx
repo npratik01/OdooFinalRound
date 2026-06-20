@@ -50,22 +50,22 @@ const InventoryMovementsPage = () => {
     },
     {
       header: 'Document Reference',
-      accessor: 'referenceModel',
+      accessor: 'referenceType',
       render: (_, row) => (
         <div>
-          <span className="text-sm font-medium text-slate-300">{row.referenceModel}</span>
-          <p className="text-xs text-slate-500">{row.referenceId}</p>
+          <span className="text-sm font-medium text-slate-300">{row.referenceType}</span>
+          <p className="text-xs text-slate-500 font-mono truncate max-w-[120px]">{row.referenceId}</p>
         </div>
       ),
     },
     {
       header: 'Description',
-      accessor: 'description',
+      accessor: 'remarks',
       render: (desc) => <span className="text-sm text-slate-400">{desc || '—'}</span>,
     },
     {
       header: 'Performed By',
-      accessor: 'performedBy',
+      accessor: 'createdBy',
       render: (user) => (
         <div>
           <span className="text-sm text-slate-300">{user?.name || 'System'}</span>

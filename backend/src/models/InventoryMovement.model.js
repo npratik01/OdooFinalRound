@@ -9,31 +9,42 @@ const inventoryMovementSchema = new mongoose.Schema({
     required: true,
     index: true
   },
-  quantity: {
-    type: Number,
-    required: true // positive for additions/receipts, negative for reductions/shipments
-  },
   movementType: {
     type: String,
-    enum: ['RECEIPT', 'DELIVERY', 'ADJUSTMENT', 'RESERVATION', 'RESERVATION_RELEASE'],
+    enum: ['SALES_RESERVATION', 'SALES_DELIVERY', 'STOCK_ADJUSTMENT', 'RESERVATION_RELEASE', 'RECEIPT'],
     required: true,
     index: true
   },
-  referenceId: {
-    type: mongoose.Schema.Types.ObjectId,
+  quantity: {
+    type: Number,
     required: true
   },
-  referenceModel: {
+  previousQty: {
+    type: Number,
+    required: true,
+    default: 0
+  },
+  newQty: {
+    type: Number,
+    required: true,
+    default: 0
+  },
+  referenceType: {
     type: String,
     enum: ['SalesOrder', 'Delivery', 'Inventory'],
     required: true
   },
-  description: {
+  referenceId: {
+    type: mongoose.Schema.Types.ObjectId,
+    required: true,
+    index: true
+  },
+  remarks: {
     type: String,
     default: '',
     trim: true
   },
-  performedBy: {
+  createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
