@@ -155,6 +155,44 @@ const releaseStock = async (productId, qty) => {
   return populatedInventory(productId);
 };
 
+/**
+ * Deducts stock from on-hand and releases reserved quantity simultaneously.
+ * Used for: delivery shipments.
+ */
+const shipStock = async (productId, qty) => {
+  if (!Number.isInteger(qty) || qty <= 0) {
+    throw { statusCode: 400, message: 'Quantity to ship must be a positive integer' };
+  }
+
+  const inventory = await Inventory.findOne({ productId });
+  if (!inventory) {
+    throw { statusCode: 404, message: 'Inventory record not found for this product' };
+  }
+
+  if (qty > inventory.onHandQty) {
+    throw {
+      statusCode: 400,
+      message: `Cannot ship ${qty} units. Only ${inventory.onHandQty} units are physically on-hand.`,
+    };
+  }
+
+  if (qty > inventory.reservedQty) {
+    throw {
+      statusCode: 400,
+      message: `Cannot ship ${qty} units of reserved stock. Only ${inventory.reservedQty} units are currently reserved.`,
+    };
+  }
+
+  inventory.onHandQty -= qty;
+  inventory.reservedQty -= qty;
+  inventory.stockStatus = checkLowStock(inventory)
+    ? STOCK_STATUS.LOW_STOCK
+    : STOCK_STATUS.NORMAL;
+
+  await inventory.save({ validateBeforeSave: false });
+  return populatedInventory(productId);
+};
+
 // ─────────────────────────────────────────────────────────────────────────────
 // QUERY OPERATIONS
 // ─────────────────────────────────────────────────────────────────────────────
@@ -280,6 +318,7 @@ module.exports = {
   decreaseStock,
   reserveStock,
   releaseStock,
+  shipStock,
   recalculateFreeQty,
   checkLowStock,
   updateStockStatus,

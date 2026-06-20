@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { Package, Warehouse, AlertTriangle, DollarSign, Clock, TrendingDown } from 'lucide-react'
+import { Package, Warehouse, AlertTriangle, DollarSign, Clock, TrendingDown, ArrowUpRight, BarChart3 } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { dashboardApi } from '../../api/dashboard.api'
 import { useLowStockItems } from '../../hooks/useInventory'
@@ -10,6 +10,8 @@ import { formatCurrency, formatDate, enumToLabel } from '../../utils/formatters'
 import LoadingSpinner from '../../components/common/LoadingSpinner'
 import Badge from '../../components/common/Badge'
 import { buildRoute } from '../../constants/routes'
+import { useState } from 'react'
+import SalesAnalyticsTab from '../../components/dashboard/SalesAnalyticsTab'
 
 // ─── Dashboard Tables ──────────────────────────────────────────────────────────
 
@@ -138,6 +140,7 @@ const LowStockProductsTable = ({ data, isLoading }) => {
 // ─── Dashboard Page ────────────────────────────────────────────────────────────
 
 const DashboardPage = () => {
+  const [activeTab, setActiveTab] = useState('inventory')
   const { data: statsData, isLoading: statsLoading } = useQuery({
     queryKey: ['dashboard', 'stats'],
     queryFn: () => dashboardApi.getStats().then((r) => r.data.data),
@@ -166,59 +169,81 @@ const DashboardPage = () => {
 
   return (
     <div className="space-y-6">
-      {/* KPI Cards — exactly 4 as specified */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        <StatsCard
-          title="Total Products"
-          value={statsLoading ? '—' : (stats.activeProducts ?? 0)}
-          subtitle={`${stats.inactiveProducts ?? 0} inactive`}
-          icon={Package}
-          color="primary"
-        />
-        <StatsCard
-          title="Total Inventory Records"
-          value={statsLoading ? '—' : (stats.totalInventoryRecords ?? 0)}
-          subtitle="Tracked items"
-          icon={Warehouse}
-          color="blue"
-        />
-        <StatsCard
-          title="Low Stock Products"
-          value={statsLoading ? '—' : (stats.lowStockCount ?? 0)}
-          subtitle="Below minimum threshold"
-          icon={AlertTriangle}
-          color={stats.lowStockCount > 0 ? 'amber' : 'emerald'}
-        />
-        <StatsCard
-          title="Total Inventory Value"
-          value={statsLoading ? '—' : formatCurrency(stats.totalInventoryValue ?? 0)}
-          subtitle={`Sales value: ${formatCurrency(stats.totalSalesValue ?? 0)}`}
-          icon={DollarSign}
-          color="emerald"
-        />
+      {/* Tabs Selector */}
+      <div className="flex border-b border-slate-800 gap-4">
+        <button
+          className={`pb-3 text-sm font-semibold border-b-2 transition-all ${activeTab === 'inventory' ? 'border-primary-500 text-white' : 'border-transparent text-slate-500 hover:text-slate-300'}`}
+          onClick={() => setActiveTab('inventory')}
+        >
+          Inventory Analytics
+        </button>
+        <button
+          className={`pb-3 text-sm font-semibold border-b-2 transition-all ${activeTab === 'sales' ? 'border-primary-500 text-white' : 'border-transparent text-slate-500 hover:text-slate-300'}`}
+          onClick={() => setActiveTab('sales')}
+        >
+          Sales Analytics
+        </button>
       </div>
 
-      {/* Charts Row + Low Stock Alert Panel */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <StockStatusPieChart data={inventoryStatusData} isLoading={chartLoading} />
-            <ProductTypeBarChart data={inventoryStatusData} isLoading={chartLoading} />
+      {activeTab === 'sales' ? (
+        <SalesAnalyticsTab />
+      ) : (
+        <>
+          {/* KPI Cards — exactly 4 as specified */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+            <StatsCard
+              title="Total Products"
+              value={statsLoading ? '—' : (stats.activeProducts ?? 0)}
+              subtitle={`${stats.inactiveProducts ?? 0} inactive`}
+              icon={Package}
+              color="primary"
+            />
+            <StatsCard
+              title="Total Inventory Records"
+              value={statsLoading ? '—' : (stats.totalInventoryRecords ?? 0)}
+              subtitle="Tracked items"
+              icon={Warehouse}
+              color="blue"
+            />
+            <StatsCard
+              title="Low Stock Products"
+              value={statsLoading ? '—' : (stats.lowStockCount ?? 0)}
+              subtitle="Below minimum threshold"
+              icon={AlertTriangle}
+              color={stats.lowStockCount > 0 ? 'amber' : 'emerald'}
+            />
+            <StatsCard
+              title="Total Inventory Value"
+              value={statsLoading ? '—' : formatCurrency(stats.totalInventoryValue ?? 0)}
+              subtitle={`Sales value: ${formatCurrency(stats.totalSalesValue ?? 0)}`}
+              icon={DollarSign}
+              color="emerald"
+            />
           </div>
-          <TopProductsChart data={inventoryStatusData} isLoading={chartLoading} />
-        </div>
-        <div className="lg:col-span-1">
-          <LowStockAlert data={lowStockData?.data} isLoading={lowStockLoading} />
-        </div>
-      </div>
 
-      {/* Low Stock Products Table */}
-      {(lowStockTableLoading || lowStockTableData?.length > 0) && (
-        <LowStockProductsTable data={lowStockTableData} isLoading={lowStockTableLoading} />
+          {/* Charts Row + Low Stock Alert Panel */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <StockStatusPieChart data={inventoryStatusData} isLoading={chartLoading} />
+                <ProductTypeBarChart data={inventoryStatusData} isLoading={chartLoading} />
+              </div>
+              <TopProductsChart data={inventoryStatusData} isLoading={chartLoading} />
+            </div>
+            <div className="lg:col-span-1">
+              <LowStockAlert data={lowStockData?.data} isLoading={lowStockLoading} />
+            </div>
+          </div>
+
+          {/* Low Stock Products Table */}
+          {(lowStockTableLoading || lowStockTableData?.length > 0) && (
+            <LowStockProductsTable data={lowStockTableData} isLoading={lowStockTableLoading} />
+          )}
+
+          {/* Recent Products Table */}
+          <RecentProductsTable data={recentProductsData} isLoading={recentLoading} />
+        </>
       )}
-
-      {/* Recent Products Table */}
-      <RecentProductsTable data={recentProductsData} isLoading={recentLoading} />
     </div>
   )
 }

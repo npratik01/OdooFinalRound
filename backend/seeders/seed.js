@@ -13,6 +13,10 @@ const bcrypt = require('bcryptjs');
 const User = require('../src/models/User.model');
 const Product = require('../src/models/Product.model');
 const Inventory = require('../src/models/Inventory.model');
+const Customer = require('../src/models/Customer.model');
+const SalesOrder = require('../src/models/SalesOrder.model');
+const Delivery = require('../src/models/Delivery.model');
+const InventoryMovement = require('../src/models/InventoryMovement.model');
 const { ROLES } = require('../src/constants/roles');
 const { PRODUCT_TYPES, PROCUREMENT_STRATEGY, PROCUREMENT_TYPE } = require('../src/constants/stockStatus');
 const logger = require('../src/utils/logger');
@@ -240,6 +244,167 @@ const seedProducts = async (adminUserId) => {
   return createdProducts;
 };
 
+const seedCustomers = async () => {
+  const customers = [
+    {
+      customerCode: 'CUST-0001',
+      customerName: 'Acme Manufacturing Corp',
+      email: 'procurement@acme.com',
+      phone: '+1 555-0199',
+      gstNumber: '27AAAAA1111A1Z1',
+      address: '101 Industrial Parkway, Sector 4',
+      city: 'Mumbai',
+      state: 'Maharashtra',
+      country: 'India',
+      pincode: '400001',
+      isActive: true
+    },
+    {
+      customerCode: 'CUST-0002',
+      customerName: 'Apex Tech Builders Ltd',
+      email: 'supplies@apextech.com',
+      phone: '+91 9876543210',
+      gstNumber: '19BBBBB2222B2Z2',
+      address: '402 Cyber Towers, Hitec City',
+      city: 'Hyderabad',
+      state: 'Telangana',
+      country: 'India',
+      pincode: '500081',
+      isActive: true
+    },
+    {
+      customerCode: 'CUST-0003',
+      customerName: 'Global Trade Logistics',
+      email: 'info@globaltrade.com',
+      phone: '+91 22 2456 7890',
+      gstNumber: '29CCCCC3333C3Z3',
+      address: 'Building 7A, Harbour Port',
+      city: 'Chennai',
+      state: 'Tamil Nadu',
+      country: 'India',
+      pincode: '600001',
+      isActive: true
+    }
+  ];
+  const created = await Customer.insertMany(customers);
+  logger.info(`✅ Seeded ${created.length} Customers`);
+  return created;
+};
+
+const seedSalesWorkflows = async (users, customers) => {
+  const steelRod = await Product.findOne({ productName: 'Steel Rod 10mm' });
+  const bearing = await Product.findOne({ productName: 'Bearing 6205-2RS' });
+  const adminUser = users.find(u => u.role === ROLES.ADMIN);
+
+  if (!steelRod || !bearing || !adminUser) {
+    logger.warn('⚠️ Product or user missing for sales order seeding.');
+    return;
+  }
+
+  // 1. Create a DRAFT Sales Order
+  const draftSO = new SalesOrder({
+    soNumber: 'SO-2026-0001',
+    customerId: customers[0]._id,
+    orderDate: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
+    items: [{
+      productId: steelRod._id,
+      quantity: 10,
+      unitPrice: steelRod.salesPrice,
+      totalPrice: 10 * steelRod.salesPrice
+    }],
+    totalAmount: 10 * steelRod.salesPrice,
+    status: 'Draft',
+    remarks: 'Standard draft order to be reviewed.',
+    createdBy: adminUser._id
+  });
+  await draftSO.save();
+  logger.info('✅ Seeded Sales Order: SO-2026-0001 [Draft]');
+
+  // 2. Create a CONFIRMED Sales Order (Stock Reserved)
+  const confirmedSO = new SalesOrder({
+    soNumber: 'SO-2026-0002',
+    customerId: customers[1]._id,
+    orderDate: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
+    items: [{
+      productId: bearing._id,
+      quantity: 15,
+      unitPrice: bearing.salesPrice,
+      totalPrice: 15 * bearing.salesPrice
+    }],
+    totalAmount: 15 * bearing.salesPrice,
+    status: 'Confirmed',
+    remarks: 'Confirmed order, stock reserved.',
+    createdBy: adminUser._id
+  });
+  await confirmedSO.save();
+  logger.info('✅ Seeded Sales Order: SO-2026-0002 [Confirmed]');
+
+  // Update Inventory: reserve 15 bearings (on-hand was 500, now 500, reserved: 50 + 15 = 65)
+  await Inventory.findOneAndUpdate(
+    { productId: bearing._id },
+    { $inc: { reservedQty: 15 } }
+  );
+  // Log reservation movement
+  await new InventoryMovement({
+    productId: bearing._id,
+    quantity: -15,
+    movementType: 'RESERVATION',
+    referenceId: confirmedSO._id,
+    referenceModel: 'SalesOrder',
+    description: 'Reserved 15 bearings for SO-2026-0002',
+    performedBy: adminUser._id
+  }).save();
+
+  // 3. Create a DELIVERED Sales Order (Fully Shipped)
+  const deliveredSO = new SalesOrder({
+    soNumber: 'SO-2026-0003',
+    customerId: customers[2]._id,
+    orderDate: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000), // 1 day ago
+    items: [{
+      productId: steelRod._id,
+      quantity: 5,
+      unitPrice: steelRod.salesPrice,
+      totalPrice: 5 * steelRod.salesPrice
+    }],
+    totalAmount: 5 * steelRod.salesPrice,
+    status: 'Fully Delivered',
+    remarks: 'Order delivered and invoiced.',
+    createdBy: adminUser._id
+  });
+  await deliveredSO.save();
+  logger.info('✅ Seeded Sales Order: SO-2026-0003 [Fully Delivered]');
+
+  // Create Delivery document
+  const dlv = new Delivery({
+    deliveryNumber: 'DLV-202606-0001',
+    soId: deliveredSO._id,
+    deliveryDate: new Date(),
+    items: [{
+      productId: steelRod._id,
+      quantityShipped: 5
+    }],
+    shippedBy: adminUser._id
+  });
+  await dlv.save();
+  logger.info('✅ Seeded Delivery: DLV-202606-0001');
+
+  // Deduct Inventory: (Steel rod on-hand was 150, decrease by 5, now 145)
+  await Inventory.findOneAndUpdate(
+    { productId: steelRod._id },
+    { $inc: { onHandQty: -5 } }
+  );
+  // Log physical delivery movement
+  await new InventoryMovement({
+    productId: steelRod._id,
+    quantity: -5,
+    movementType: 'DELIVERY',
+    referenceId: dlv._id,
+    referenceModel: 'Delivery',
+    description: 'Shipped 5 steel rods for DLV-202606-0001',
+    performedBy: adminUser._id
+  }).save();
+};
+
 const seed = async () => {
   try {
     logger.info('🌱 Starting database seeder...');
@@ -250,13 +415,19 @@ const seed = async () => {
     await Promise.all([
       User.deleteMany({}),
       Product.deleteMany({}),
-      Inventory.deleteMany({})
+      Inventory.deleteMany({}),
+      Customer.deleteMany({}),
+      SalesOrder.deleteMany({}),
+      Delivery.deleteMany({}),
+      InventoryMovement.deleteMany({})
     ]);
     logger.info('🧹 Cleared existing database collections.');
 
     const users = await seedUsers();
     const adminUser = await User.collection.findOne({ email: 'admin@erp.com' });
     await seedProducts(adminUser._id);
+    const customers = await seedCustomers();
+    await seedSalesWorkflows(users, customers);
 
     logger.info('\n🎉 Seeding completed successfully!');
     logger.info('\n📋 Login Credentials:');

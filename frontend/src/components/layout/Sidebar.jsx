@@ -1,7 +1,7 @@
 import { NavLink } from 'react-router-dom'
 import {
   LayoutDashboard, Package, Warehouse, Users, ChevronRight,
-  Activity, Settings, LogOut
+  Activity, LogOut, FileText, ArrowLeftRight, UserCheck
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { ROLES } from '../../constants/roles'
@@ -10,6 +10,9 @@ const navItems = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/products', label: 'Products', icon: Package },
   { to: '/inventory', label: 'Inventory', icon: Warehouse },
+  { to: '/inventory/movements', label: 'Stock Movements', icon: ArrowLeftRight },
+  { to: '/customers', label: 'Customers', icon: UserCheck },
+  { to: '/sales', label: 'Sales Orders', icon: FileText },
   { to: '/users', label: 'Users', icon: Users, roles: [ROLES.ADMIN] },
 ]
 

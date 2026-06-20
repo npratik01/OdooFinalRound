@@ -11,6 +11,11 @@ import ProductDetailPage from '../pages/products/ProductDetailPage'
 import InventoryPage from '../pages/inventory/InventoryPage'
 import UsersPage from '../pages/users/UsersPage'
 import UserDetailPage from '../pages/users/UserDetailPage'
+import CustomersPage from '../pages/customers/CustomersPage'
+import CustomerDetailPage from '../pages/customers/CustomerDetailPage'
+import SalesOrdersPage from '../pages/sales/SalesOrdersPage'
+import SalesOrderDetailPage from '../pages/sales/SalesOrderDetailPage'
+import InventoryMovementsPage from '../pages/inventory/InventoryMovementsPage'
 
 const AppRoutes = () => {
   return (
@@ -32,6 +37,11 @@ const AppRoutes = () => {
         <Route path="products" element={<ProductsPage />} />
         <Route path="products/:id" element={<ProductDetailPage />} />
         <Route path="inventory" element={<InventoryPage />} />
+        <Route path="inventory/movements" element={<InventoryMovementsPage />} />
+        <Route path="customers" element={<CustomersPage />} />
+        <Route path="customers/:id" element={<CustomerDetailPage />} />
+        <Route path="sales" element={<SalesOrdersPage />} />
+        <Route path="sales/:id" element={<SalesOrderDetailPage />} />
 
         {/* Admin only */}
         <Route
