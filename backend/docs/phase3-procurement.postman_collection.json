@@ -1,0 +1,318 @@
+{
+  "info": {
+    "_postman_id": "phase3-procurement-erp",
+    "name": "Mini ERP — Phase 3: Procurement & Vendor Management",
+    "description": "Complete Postman collection for Phase 3 — Vendor Management, Purchase Orders, Goods Receipt, Procurement Analytics, and Supplier Performance",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl",  "value": "http://localhost:5000/api", "type": "string" },
+    { "key": "token",    "value": "",                           "type": "string" },
+    { "key": "vendorId", "value": "",                           "type": "string" },
+    { "key": "poId",     "value": "",                           "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "0. Auth",
+      "item": [
+        {
+          "name": "Login (get token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const r = pm.response.json();",
+                  "if (r.data && r.data.token) {",
+                  "  pm.collectionVariables.set('token', r.data.token);",
+                  "  console.log('Token set:', r.data.token.slice(0,30) + '...');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": \"admin@erp.com\", \"password\": \"Admin@123\"}"
+            },
+            "url": "{{baseUrl}}/auth/login"
+          }
+        }
+      ]
+    },
+    {
+      "name": "1. Vendor Management",
+      "item": [
+        {
+          "name": "Create Vendor",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const r = pm.response.json();",
+                  "if (r.data && r.data._id) {",
+                  "  pm.collectionVariables.set('vendorId', r.data._id);",
+                  "  console.log('VendorId set:', r.data._id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vendorName\": \"Acme Raw Materials Pvt. Ltd.\",\n  \"contactPerson\": \"Rajesh Sharma\",\n  \"email\": \"rajesh@acme.com\",\n  \"phone\": \"+91 98765 43210\",\n  \"gstNumber\": \"27AACCA1234F1ZA\",\n  \"address\": \"Plot 12, MIDC Industrial Area\",\n  \"city\": \"Pune\",\n  \"state\": \"Maharashtra\",\n  \"country\": \"India\",\n  \"pincode\": \"411019\",\n  \"paymentTerms\": \"Net 30\",\n  \"leadTimeDays\": 7,\n  \"rating\": 4\n}"
+            },
+            "url": "{{baseUrl}}/vendors"
+          }
+        },
+        {
+          "name": "Get All Vendors",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/vendors?page=1&limit=10",
+              "query": [
+                { "key": "page",  "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Search Vendors",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/vendors?search=acme&isActive=true",
+              "query": [
+                { "key": "search",   "value": "acme" },
+                { "key": "isActive", "value": "true" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Vendor by ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/vendors/{{vendorId}}"
+          }
+        },
+        {
+          "name": "Update Vendor",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rating\": 5,\n  \"leadTimeDays\": 5,\n  \"paymentTerms\": \"Net 15\"\n}"
+            },
+            "url": "{{baseUrl}}/vendors/{{vendorId}}"
+          }
+        },
+        {
+          "name": "Toggle Vendor Status",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/vendors/{{vendorId}}/status"
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Purchase Orders",
+      "item": [
+        {
+          "name": "Create Purchase Order (Draft)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const r = pm.response.json();",
+                  "if (r.data && r.data._id) {",
+                  "  pm.collectionVariables.set('poId', r.data._id);",
+                  "  console.log('PO ID set:', r.data._id, '| PO#:', r.data.poNumber);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vendorId\": \"{{vendorId}}\",\n  \"orderDate\": \"2026-06-20\",\n  \"expectedDeliveryDate\": \"2026-06-27\",\n  \"remarks\": \"Urgent — production stock replenishment\",\n  \"items\": [\n    {\n      \"productId\": \"REPLACE_WITH_PRODUCT_ID\",\n      \"quantity\": 100,\n      \"unitCost\": 50.00\n    },\n    {\n      \"productId\": \"REPLACE_WITH_PRODUCT_ID_2\",\n      \"quantity\": 50,\n      \"unitCost\": 120.00\n    }\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/purchase-orders"
+          }
+        },
+        {
+          "name": "Get All Purchase Orders",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/purchase-orders?page=1&limit=10",
+              "query": [
+                { "key": "page",  "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Filter POs by Status",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/purchase-orders?status=Confirmed",
+              "query": [{ "key": "status", "value": "Confirmed" }]
+            }
+          }
+        },
+        {
+          "name": "Get Purchase Order by ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/purchase-orders/{{poId}}"
+          }
+        },
+        {
+          "name": "Update Purchase Order (Draft only)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"remarks\": \"Updated: priority order\",\n  \"expectedDeliveryDate\": \"2026-06-25\"\n}"
+            },
+            "url": "{{baseUrl}}/purchase-orders/{{poId}}"
+          }
+        },
+        {
+          "name": "Confirm Purchase Order",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/purchase-orders/{{poId}}/confirm"
+          }
+        },
+        {
+          "name": "Cancel Purchase Order",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/purchase-orders/{{poId}}/cancel"
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Goods Receipt",
+      "item": [
+        {
+          "name": "Receive Goods (Full)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"productId\": \"REPLACE_WITH_PRODUCT_ID\",\n      \"quantityReceived\": 100,\n      \"remarks\": \"Received in good condition\"\n    },\n    {\n      \"productId\": \"REPLACE_WITH_PRODUCT_ID_2\",\n      \"quantityReceived\": 50,\n      \"remarks\": \"\"\n    }\n  ],\n  \"remarks\": \"Batch received from Acme — Invoice #INV-2026-0089\"\n}"
+            },
+            "url": "{{baseUrl}}/purchase-orders/{{poId}}/receive"
+          }
+        },
+        {
+          "name": "Receive Goods (Partial — 40 of 100)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type",  "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"items\": [\n    {\n      \"productId\": \"REPLACE_WITH_PRODUCT_ID\",\n      \"quantityReceived\": 40,\n      \"remarks\": \"Partial delivery — truck breakdown\"\n    }\n  ],\n  \"remarks\": \"Partial receipt — remaining 60 expected next week\"\n}"
+            },
+            "url": "{{baseUrl}}/purchase-orders/{{poId}}/receive"
+          }
+        },
+        {
+          "name": "Get Receipts for a PO",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/purchase-orders/{{poId}}/receipts"
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Procurement Analytics",
+      "item": [
+        {
+          "name": "Get Procurement Dashboard (KPIs)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/procurement/dashboard"
+          }
+        },
+        {
+          "name": "Get Procurement Analytics (Charts)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/procurement/analytics"
+          }
+        },
+        {
+          "name": "Get Supplier Performance",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/procurement/supplier-performance"
+          }
+        },
+        {
+          "name": "Get Low Stock Insights",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{token}}" }],
+            "url": "{{baseUrl}}/procurement/low-stock-insights"
+          }
+        }
+      ]
+    }
+  ]
+}

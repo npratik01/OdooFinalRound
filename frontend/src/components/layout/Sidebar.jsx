@@ -2,18 +2,15 @@ import { NavLink } from 'react-router-dom'
 import {
   LayoutDashboard, Package, Warehouse, Users,
   ChevronRight, Activity, LogOut, FileText,
-  ArrowLeftRight, UserCheck, TrendingUp, Truck, BarChart2
+  ArrowLeftRight, UserCheck, TrendingUp, Truck, BarChart2,
+  Building2, ShoppingCart, BarChart3, Award
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { ROLES } from '../../constants/roles'
 
 // ─── Nav configuration with role-based visibility ────────────────────────────
-// ADMIN / BUSINESS_OWNER : Full access — all nav items visible
-// SALES_USER             : Customers, Sales Orders, Sales Dashboard, Sales Analytics
-// PURCHASE_USER          : No sales module access → sees Dashboard only
-// MANUFACTURING_USER     : No sales module access → sees Dashboard only
-// INVENTORY_MANAGER      : Inventory, Stock Movements, Sales Orders (read-only)
 const navItems = [
+  // ── Core ──────────────────────────────────────────────────────────────────
   {
     to: '/dashboard',
     label: 'Dashboard',
@@ -30,7 +27,7 @@ const navItems = [
     to: '/inventory',
     label: 'Inventory',
     icon: Warehouse,
-    roles: [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.INVENTORY_MANAGER],
+    roles: [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.INVENTORY_MANAGER, ROLES.PURCHASE_USER],
   },
   {
     to: '/inventory/movements',
@@ -38,6 +35,7 @@ const navItems = [
     icon: ArrowLeftRight,
     roles: [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.INVENTORY_MANAGER],
   },
+  // ── Sales ─────────────────────────────────────────────────────────────────
   {
     to: '/customers',
     label: 'Customers',
@@ -62,6 +60,32 @@ const navItems = [
     icon: BarChart2,
     roles: [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.SALES_USER],
   },
+  // ── Procurement (Phase 3) ─────────────────────────────────────────────────
+  {
+    to: '/vendors',
+    label: 'Vendors',
+    icon: Building2,
+    roles: [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.PURCHASE_USER, ROLES.SALES_USER, ROLES.INVENTORY_MANAGER, ROLES.MANUFACTURING_USER],
+  },
+  {
+    to: '/purchase-orders',
+    label: 'Purchase Orders',
+    icon: ShoppingCart,
+    roles: [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.PURCHASE_USER, ROLES.SALES_USER, ROLES.INVENTORY_MANAGER, ROLES.MANUFACTURING_USER],
+  },
+  {
+    to: '/procurement-dashboard',
+    label: 'Procurement',
+    icon: BarChart3,
+    roles: [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.PURCHASE_USER, ROLES.INVENTORY_MANAGER],
+  },
+  {
+    to: '/supplier-performance',
+    label: 'Supplier Performance',
+    icon: Award,
+    roles: [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.PURCHASE_USER],
+  },
+  // ── Admin ─────────────────────────────────────────────────────────────────
   {
     to: '/users',
     label: 'Users',
@@ -87,7 +111,7 @@ const Sidebar = () => {
           </div>
           <div>
             <h1 className="font-bold text-white text-sm leading-tight">Mini ERP</h1>
-            <p className="text-xs text-slate-500 leading-tight">Phase 2 — Sales</p>
+            <p className="text-xs text-slate-500 leading-tight">Phase 3 — Procurement</p>
           </div>
         </div>
       </div>

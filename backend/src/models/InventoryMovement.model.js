@@ -11,7 +11,19 @@ const inventoryMovementSchema = new mongoose.Schema({
   },
   movementType: {
     type: String,
-    enum: ['SALES_RESERVATION', 'SALES_DELIVERY', 'STOCK_ADJUSTMENT', 'RESERVATION_RELEASE', 'RECEIPT'],
+    enum: [
+      // Phase 2 — Sales
+      'SALES_RESERVATION',
+      'SALES_DELIVERY',
+      'RESERVATION_RELEASE',
+      // Phase 1 — Manual
+      'STOCK_ADJUSTMENT',
+      'RECEIPT',
+      // Phase 3 — Procurement
+      'PURCHASE_RECEIPT',
+      'PURCHASE_RETURN',
+      'PURCHASE_ADJUSTMENT',
+    ],
     required: true,
     index: true
   },
@@ -31,7 +43,16 @@ const inventoryMovementSchema = new mongoose.Schema({
   },
   referenceType: {
     type: String,
-    enum: ['SalesOrder', 'Delivery', 'Inventory'],
+    enum: [
+      // Phase 2
+      'SalesOrder',
+      'Delivery',
+      // Phase 1
+      'Inventory',
+      // Phase 3
+      'PurchaseOrder',
+      'GoodsReceipt',
+    ],
     required: true
   },
   referenceId: {
