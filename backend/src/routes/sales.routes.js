@@ -3,9 +3,12 @@
 const express = require('express');
 const router = express.Router();
 const salesController = require('../controllers/sales.controller');
+const { authenticate } = require('../middleware/auth.middleware');
 const { authorize } = require('../middleware/rbac.middleware');
 const { validate } = require('../middleware/validate.middleware');
 const { createSalesOrderSchema, updateSalesOrderSchema } = require('../validators/sales.validator');
+
+router.use(authenticate);
 
 router.get(
   '/',

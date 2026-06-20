@@ -2,6 +2,7 @@
 
 const SalesOrder = require('../models/SalesOrder.model');
 const Inventory = require('../models/Inventory.model');
+const Delivery = require('../models/Delivery.model');
 const inventoryService = require('./inventory.service');
 const movementService = require('./inventoryMovement.service');
 const { parsePagination, buildPaginationMeta } = require('../utils/pagination');
@@ -185,21 +186,37 @@ const cancelSalesOrder = async (id, userId) => {
     throw { statusCode: 400, message: `Cannot cancel order in '${order.status}' status.` };
   }
 
-  // If order was Confirmed, we must release the reserved stock
-  if (order.status === 'Confirmed') {
-    for (const item of order.items) {
-      await inventoryService.releaseStock(item.productId, item.quantity);
+  // If order has reserved stock (Confirmed or Partially Delivered), release the remaining reserved qty
+  if (['Confirmed', 'Partially Delivered'].includes(order.status)) {
+    // For Partially Delivered: find how much has already been physically shipped
+    const previousDeliveries = await Delivery.find({ soId: order._id });
+    const deliveredMap = {};
+    for (const del of previousDeliveries) {
+      for (const item of del.items) {
+        const pid = item.productId.toString();
+        deliveredMap[pid] = (deliveredMap[pid] || 0) + item.quantityShipped;
+      }
+    }
 
-      // Log movement release
-      await movementService.createMovement({
-        productId: item.productId,
-        quantity: item.quantity,
-        movementType: 'RESERVATION_RELEASE',
-        referenceId: order._id,
-        referenceModel: 'SalesOrder',
-        description: `Released reserved stock due to cancellation of SO ${order.soNumber}`,
-        performedBy: userId
-      });
+    for (const item of order.items) {
+      const pid = item.productId._id ? item.productId._id.toString() : item.productId.toString();
+      const alreadyShipped = deliveredMap[pid] || 0;
+      // Only release the still-reserved portion (ordered - shipped)
+      const remainingReserved = Math.max(0, item.quantity - alreadyShipped);
+
+      if (remainingReserved > 0) {
+        await inventoryService.releaseStock(item.productId._id || item.productId, remainingReserved);
+
+        await movementService.createMovement({
+          productId: item.productId._id || item.productId,
+          quantity: remainingReserved,
+          movementType: 'RESERVATION_RELEASE',
+          referenceId: order._id,
+          referenceModel: 'SalesOrder',
+          description: `Released ${remainingReserved} reserved units due to cancellation of SO ${order.soNumber}`,
+          performedBy: userId
+        });
+      }
     }
   }
 

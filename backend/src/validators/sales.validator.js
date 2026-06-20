@@ -3,7 +3,7 @@
 const Joi = require('joi');
 
 // Mongoose ObjectId helper validation
-const objectIdSchema = Joi.string().pattern(/^[0-9a-fA-H]{24}$/i).messages({
+const objectIdSchema = Joi.string().pattern(/^[0-9a-fA-F]{24}$/).messages({
   'string.pattern.base': 'Must be a valid 24-character hexadecimal ID'
 });
 
