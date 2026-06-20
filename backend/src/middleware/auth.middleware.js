@@ -1,64 +1,24 @@
-'use strict';
+const { verify } = require("../utils/jwt");
+const User = require("../models/user.model");
+const { formatErrorResponse } = require("../utils/responseHelper");
 
-const jwt = require('jsonwebtoken');
-const User = require('../models/User.model');
-const { sendUnauthorized } = require('../utils/apiResponse');
-const logger = require('../utils/logger');
-
-/**
- * Verifies JWT token from Authorization header.
- * Attaches decoded user payload to req.user.
- */
-const authenticate = async (req, res, next) => {
+async function authenticate(req, res, next) {
   try {
-    const authHeader = req.headers.authorization;
-
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return sendUnauthorized(res, 'Access token is required');
-    }
-
-    const token = authHeader.split(' ')[1];
-
-    if (!token) {
-      return sendUnauthorized(res, 'Access token is required');
-    }
-
-    let decoded;
-    try {
-      decoded = jwt.verify(token, process.env.JWT_SECRET);
-    } catch (err) {
-      if (err.name === 'TokenExpiredError') {
-        return sendUnauthorized(res, 'Access token has expired. Please login again.');
-      }
-      if (err.name === 'JsonWebTokenError') {
-        return sendUnauthorized(res, 'Invalid access token');
-      }
-      throw err;
-    }
-
-    // Verify user still exists and is active
-    const user = await User.findById(decoded.userId).select('_id name email role isActive');
-
-    if (!user) {
-      return sendUnauthorized(res, 'User associated with this token no longer exists');
-    }
-
-    if (!user.isActive) {
-      return sendUnauthorized(res, 'Your account has been deactivated. Contact an administrator.');
-    }
-
-    req.user = {
-      userId: user._id.toString(),
-      name: user.name,
-      email: user.email,
-      role: user.role,
-    };
-
+    const auth = req.headers.authorization;
+    if (!auth || !auth.startsWith("Bearer "))
+      return formatErrorResponse(res, 401, "Unauthorized", []);
+    const token = auth.split(" ")[1];
+    const decoded = verify(token);
+    // token payload: { userId, email, role }
+    const userId = decoded.userId || decoded.id;
+    const user = await User.findById(userId).select("-password");
+    if (!user || !user.isActive)
+      return formatErrorResponse(res, 401, "Unauthorized", []);
+    req.user = user;
     next();
-  } catch (error) {
-    logger.error('Auth middleware error:', error);
-    next(error);
+  } catch (err) {
+    return formatErrorResponse(res, 401, "Invalid or expired token", []);
   }
-};
+}
 
 module.exports = { authenticate };

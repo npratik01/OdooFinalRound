@@ -1,20 +1,17 @@
-'use strict';
-
-const express = require('express');
+const express = require("express");
 const router = express.Router();
+const authController = require("../controllers/auth.controller");
+const {
+  loginValidation,
+  registerValidation,
+} = require("../validators/auth.validator");
+const { validate } = require("../middleware/validate.middleware");
+const { authenticate } = require("../middleware/auth.middleware");
 
-const { login, getMe, logout } = require('../controllers/auth.controller');
-const { authenticate } = require('../middleware/auth.middleware');
-const { validate } = require('../middleware/validate.middleware');
-const { loginSchema } = require('../validators/auth.validator');
-
-// POST /api/auth/login
-router.post('/login', validate(loginSchema), login);
-
-// GET /api/auth/me
-router.get('/me', authenticate, getMe);
-
-// POST /api/auth/logout
-router.post('/logout', authenticate, logout);
+router.post("/login", loginValidation, validate, authController.login);
+router.post("/register", registerValidation, validate, authController.register);
+router.get("/me", authenticate, authController.me);
+router.post("/logout", authenticate, authController.logout);
+router.post("/refresh", authController.refresh);
 
 module.exports = router;

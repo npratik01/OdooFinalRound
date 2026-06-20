@@ -1,83 +1,45 @@
-'use strict';
-
-const express = require('express');
-const cors = require('cors');
-const helmet = require('helmet');
-const morgan = require('morgan');
-const rateLimit = require('express-rate-limit');
-
-const routes = require('./src/routes/index');
-const { errorHandler, notFoundHandler } = require('./src/middleware/errorMiddleware');
-const logger = require('./src/utils/logger');
+require("dotenv").config();
+const express = require("express");
+const cors = require("cors");
+const helmet = require("helmet");
+const morgan = require("morgan");
+const rateLimit = require("express-rate-limit");
+const routes = require("./src/routes");
+const { errorHandler } = require("./src/middleware/error.middleware");
+const { connectDB } = require("./src/config/db");
 
 const app = express();
 
-// ─── Security Middleware ───────────────────────────────────────────────────
 app.use(helmet());
-
-// CORS
+// CORS - tighten origin list when provided via env CORS_ORIGINS (comma-separated)
+const allowedOrigins = process.env.CORS_ORIGINS
+  ? process.env.CORS_ORIGINS.split(",").map((s) => s.trim())
+  : null;
 const corsOptions = {
-  origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  origin: function (origin, callback) {
+    if (!origin || !allowedOrigins) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error("CORS policy: Origin not allowed"), false);
+  },
 };
 app.use(cors(corsOptions));
+app.use(express.json());
+app.use(morgan("dev"));
 
-// Rate Limiting
+// Rate limiter
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 200,
+  max: Number(process.env.RATE_LIMIT_MAX) || 100, // limit each IP
   standardHeaders: true,
   legacyHeaders: false,
-  message: {
-    success: false,
-    message: 'Too many requests from this IP, please try again after 15 minutes.',
-  },
 });
-app.use('/api', limiter);
+app.use(limiter);
 
-// Stricter rate limit for auth endpoints
-const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 20,
-  message: {
-    success: false,
-    message: 'Too many authentication attempts. Please try again after 15 minutes.',
-  },
-});
-app.use('/api/auth', authLimiter);
+// connect DB
+connectDB();
 
-// ─── Request Parsing ──────────────────────────────────────────────────────
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use("/api", routes);
 
-// ─── Logging ──────────────────────────────────────────────────────────────
-if (process.env.NODE_ENV !== 'test') {
-  app.use(
-    morgan('combined', {
-      stream: {
-        write: (message) => logger.http(message.trim()),
-      },
-    })
-  );
-}
-
-// ─── Health Check ─────────────────────────────────────────────────────────
-app.get('/health', (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: 'Mini ERP API is healthy',
-    environment: process.env.NODE_ENV,
-    timestamp: new Date().toISOString(),
-  });
-});
-
-// ─── API Routes ───────────────────────────────────────────────────────────
-app.use('/api', routes);
-
-// ─── Error Handling ───────────────────────────────────────────────────────
-app.use(notFoundHandler);
 app.use(errorHandler);
 
 module.exports = app;
