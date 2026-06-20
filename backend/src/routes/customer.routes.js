@@ -4,7 +4,7 @@ const express = require('express');
 const router = express.Router();
 const customerController = require('../controllers/customer.controller');
 const { authorize } = require('../middleware/rbac.middleware');
-const validate = require('../middleware/validate.middleware');
+const { validate } = require('../middleware/validate.middleware');
 const { createCustomerSchema, updateCustomerSchema } = require('../validators/customer.validator');
 
 router.get(

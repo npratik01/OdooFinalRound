@@ -4,7 +4,7 @@ const express = require('express');
 const router = express.Router();
 const salesController = require('../controllers/sales.controller');
 const { authorize } = require('../middleware/rbac.middleware');
-const validate = require('../middleware/validate.middleware');
+const { validate } = require('../middleware/validate.middleware');
 const { createSalesOrderSchema, updateSalesOrderSchema } = require('../validators/sales.validator');
 
 router.get(
