@@ -410,6 +410,7 @@ const seed = async () => {
     logger.info('🌱 Starting database seeder...');
     await mongoose.connect(process.env.MONGO_URI);
     logger.info(`✅ Connected to MongoDB: ${process.env.MONGO_URI}`);
+    
 
     // Clear existing data to guarantee clean seed
     await Promise.all([
