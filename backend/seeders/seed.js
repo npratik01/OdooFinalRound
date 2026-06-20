@@ -349,11 +349,9 @@ const seedSalesWorkflows = async (users, customers) => {
     productId: bearing._id,
     quantity: 15,
     movementType: 'SALES_RESERVATION',
-    referenceType: 'SalesOrder',
     referenceId: confirmedSO._id,
+    referenceType: 'SalesOrder',
     remarks: 'Reserved 15 bearings for SO-2026-0002',
-    previousQty: 500,
-    newQty: 485,
     createdBy: adminUser._id
   }).save();
 
@@ -398,13 +396,11 @@ const seedSalesWorkflows = async (users, customers) => {
   // Log physical delivery movement
   await new InventoryMovement({
     productId: steelRod._id,
-    quantity: 5,
+    quantity: -5,
     movementType: 'SALES_DELIVERY',
-    referenceType: 'Delivery',
     referenceId: dlv._id,
+    referenceType: 'Delivery',
     remarks: 'Shipped 5 steel rods for DLV-202606-0001',
-    previousQty: 150,
-    newQty: 145,
     createdBy: adminUser._id
   }).save();
 };

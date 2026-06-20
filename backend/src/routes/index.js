@@ -16,6 +16,12 @@ const inventoryMovementRoutes = require('./inventoryMovement.routes');
 const vendorRoutes = require('./vendor.routes');
 const purchaseRoutes = require('./purchase.routes');
 const procurementDashboardRoutes = require('./procurementDashboard.routes');
+// Phase 4 — Manufacturing
+const bomRoutes = require('./bom.routes');
+const workCenterRoutes = require('./workCenter.routes');
+const operationRoutes = require('./operation.routes');
+const manufacturingRoutes = require('./manufacturing.routes');
+const manufacturingDashboardRoutes = require('./manufacturingDashboard.routes');
 
 // Mount all API routes
 router.use('/auth', authRoutes);
@@ -31,6 +37,13 @@ router.use('/inventory-movements', inventoryMovementRoutes);
 router.use('/vendors', vendorRoutes);
 router.use('/purchase-orders', purchaseRoutes);
 router.use('/procurement', procurementDashboardRoutes);
+// Phase 4 — Manufacturing
+router.use('/bom', bomRoutes);
+router.use('/work-centers', workCenterRoutes);
+router.use('/operations', operationRoutes);
+router.use('/manufacturing', manufacturingRoutes);
+router.use('/manufacturing-dashboard', manufacturingDashboardRoutes);
 
 module.exports = router;
+
 

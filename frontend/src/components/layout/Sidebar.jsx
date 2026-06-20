@@ -3,7 +3,8 @@ import {
   LayoutDashboard, Package, Warehouse, Users,
   ChevronRight, Activity, LogOut, FileText,
   ArrowLeftRight, UserCheck, TrendingUp, Truck, BarChart2,
-  Building2, ShoppingCart, BarChart3, Award
+  Building2, ShoppingCart, BarChart3, Award,
+  Factory, ClipboardList, Cpu, Settings
 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { ROLES } from '../../constants/roles'
@@ -21,19 +22,19 @@ const navItems = [
     to: '/products',
     label: 'Products',
     icon: Package,
-    roles: [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.SALES_USER, ROLES.INVENTORY_MANAGER],
+    roles: [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.SALES_USER, ROLES.INVENTORY_MANAGER, ROLES.MANUFACTURING_USER],
   },
   {
     to: '/inventory',
     label: 'Inventory',
     icon: Warehouse,
-    roles: [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.INVENTORY_MANAGER, ROLES.PURCHASE_USER],
+    roles: [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.INVENTORY_MANAGER, ROLES.PURCHASE_USER, ROLES.MANUFACTURING_USER],
   },
   {
     to: '/inventory/movements',
     label: 'Stock Movements',
     icon: ArrowLeftRight,
-    roles: [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.INVENTORY_MANAGER],
+    roles: [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.INVENTORY_MANAGER, ROLES.MANUFACTURING_USER],
   },
   // ── Sales ─────────────────────────────────────────────────────────────────
   {
@@ -85,6 +86,37 @@ const navItems = [
     icon: Award,
     roles: [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.PURCHASE_USER],
   },
+  // ── Manufacturing (Phase 4) ───────────────────────────────────────────────
+  {
+    to: '/manufacturing-dashboard',
+    label: 'Mfg Dashboard',
+    icon: Factory,
+    roles: [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.MANUFACTURING_USER, ROLES.INVENTORY_MANAGER],
+  },
+  {
+    to: '/manufacturing',
+    label: 'Manufacturing Orders',
+    icon: ClipboardList,
+    roles: [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.MANUFACTURING_USER, ROLES.INVENTORY_MANAGER],
+  },
+  {
+    to: '/bom',
+    label: 'Bill of Materials',
+    icon: Package,
+    roles: [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.MANUFACTURING_USER, ROLES.INVENTORY_MANAGER],
+  },
+  {
+    to: '/work-centers',
+    label: 'Work Centers',
+    icon: Settings,
+    roles: [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.MANUFACTURING_USER, ROLES.INVENTORY_MANAGER],
+  },
+  {
+    to: '/operations',
+    label: 'Operations Catalog',
+    icon: Cpu,
+    roles: [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.MANUFACTURING_USER, ROLES.INVENTORY_MANAGER],
+  },
   // ── Admin ─────────────────────────────────────────────────────────────────
   {
     to: '/users',
@@ -111,10 +143,11 @@ const Sidebar = () => {
           </div>
           <div>
             <h1 className="font-bold text-white text-sm leading-tight">Mini ERP</h1>
-            <p className="text-xs text-slate-500 leading-tight">Phase 3 — Procurement</p>
+            <p className="text-xs text-slate-500 leading-tight">Phase 4 — Manufacturing</p>
           </div>
         </div>
       </div>
+
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">

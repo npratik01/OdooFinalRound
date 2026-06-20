@@ -35,6 +35,17 @@ import GoodsReceiptPage from '../pages/purchase/GoodsReceiptPage'
 import ProcurementDashboardPage from '../pages/procurement/ProcurementDashboardPage'
 import SupplierPerformancePage from '../pages/procurement/SupplierPerformancePage'
 
+// Phase 4 Pages — Manufacturing
+import ManufacturingDashboardPage from '../pages/manufacturing/ManufacturingDashboardPage'
+import ManufacturingOrdersPage from '../pages/manufacturing/ManufacturingOrdersPage'
+import CreateManufacturingOrderPage from '../pages/manufacturing/CreateManufacturingOrderPage'
+import ManufacturingOrderDetailPage from '../pages/manufacturing/ManufacturingOrderDetailPage'
+import BOMListPage from '../pages/manufacturing/BOMListPage'
+import CreateBOMPage from '../pages/manufacturing/CreateBOMPage'
+import BOMDetailPage from '../pages/manufacturing/BOMDetailPage'
+import WorkCentersPage from '../pages/manufacturing/WorkCentersPage'
+import OperationsPage from '../pages/manufacturing/OperationsPage'
+
 // ─── Role Groups ──────────────────────────────────────────────────────────────
 const SALES_ROLES        = [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.SALES_USER]
 const SALES_READ_ROLES   = [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.SALES_USER, ROLES.INVENTORY_MANAGER]
@@ -46,6 +57,10 @@ const VENDOR_READ_ROLES  = [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.PURCHASE_US
 const PURCHASE_ROLES     = [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.PURCHASE_USER]
 const PURCHASE_READ_ROLES= [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.PURCHASE_USER, ROLES.SALES_USER, ROLES.INVENTORY_MANAGER, ROLES.MANUFACTURING_USER]
 const PROC_DASH_ROLES    = [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.PURCHASE_USER, ROLES.INVENTORY_MANAGER]
+
+// Phase 4 role groups
+const MFG_READ_ROLES     = [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.MANUFACTURING_USER, ROLES.INVENTORY_MANAGER]
+const MFG_WRITE_ROLES    = [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.MANUFACTURING_USER]
 
 const AppRoutes = () => {
   return (
@@ -68,12 +83,12 @@ const AppRoutes = () => {
         <Route path="dashboard" element={<DashboardPage />} />
 
         {/* Products */}
-        <Route path="products" element={<ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.SALES_USER, ROLES.INVENTORY_MANAGER]}><ProductsPage /></ProtectedRoute>} />
-        <Route path="products/:id" element={<ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.SALES_USER, ROLES.INVENTORY_MANAGER]}><ProductDetailPage /></ProtectedRoute>} />
+        <Route path="products" element={<ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.SALES_USER, ROLES.INVENTORY_MANAGER, ROLES.MANUFACTURING_USER]}><ProductsPage /></ProtectedRoute>} />
+        <Route path="products/:id" element={<ProtectedRoute allowedRoles={[ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.SALES_USER, ROLES.INVENTORY_MANAGER, ROLES.MANUFACTURING_USER]}><ProductDetailPage /></ProtectedRoute>} />
 
         {/* Inventory */}
-        <Route path="inventory" element={<ProtectedRoute allowedRoles={[...INVENTORY_ROLES, ROLES.PURCHASE_USER]}><InventoryPage /></ProtectedRoute>} />
-        <Route path="inventory/movements" element={<ProtectedRoute allowedRoles={INVENTORY_ROLES}><InventoryMovementsPage /></ProtectedRoute>} />
+        <Route path="inventory" element={<ProtectedRoute allowedRoles={[...INVENTORY_ROLES, ROLES.PURCHASE_USER, ROLES.MANUFACTURING_USER]}><InventoryPage /></ProtectedRoute>} />
+        <Route path="inventory/movements" element={<ProtectedRoute allowedRoles={[...INVENTORY_ROLES, ROLES.MANUFACTURING_USER]}><InventoryMovementsPage /></ProtectedRoute>} />
 
         {/* Customers */}
         <Route path="customers" element={<ProtectedRoute allowedRoles={SALES_ROLES}><CustomersPage /></ProtectedRoute>} />
@@ -103,6 +118,17 @@ const AppRoutes = () => {
         <Route path="procurement-dashboard" element={<ProtectedRoute allowedRoles={PROC_DASH_ROLES}><ProcurementDashboardPage /></ProtectedRoute>} />
         <Route path="supplier-performance" element={<ProtectedRoute allowedRoles={PURCHASE_ROLES}><SupplierPerformancePage /></ProtectedRoute>} />
 
+        {/* ── Phase 4: Manufacturing ────────────────────────────────────── */}
+        <Route path="manufacturing-dashboard" element={<ProtectedRoute allowedRoles={MFG_READ_ROLES}><ManufacturingDashboardPage /></ProtectedRoute>} />
+        <Route path="manufacturing" element={<ProtectedRoute allowedRoles={MFG_READ_ROLES}><ManufacturingOrdersPage /></ProtectedRoute>} />
+        <Route path="manufacturing/new" element={<ProtectedRoute allowedRoles={MFG_WRITE_ROLES}><CreateManufacturingOrderPage /></ProtectedRoute>} />
+        <Route path="manufacturing/:id" element={<ProtectedRoute allowedRoles={MFG_READ_ROLES}><ManufacturingOrderDetailPage /></ProtectedRoute>} />
+        <Route path="bom" element={<ProtectedRoute allowedRoles={MFG_READ_ROLES}><BOMListPage /></ProtectedRoute>} />
+        <Route path="bom/new" element={<ProtectedRoute allowedRoles={MFG_WRITE_ROLES}><CreateBOMPage /></ProtectedRoute>} />
+        <Route path="bom/:id" element={<ProtectedRoute allowedRoles={MFG_READ_ROLES}><BOMDetailPage /></ProtectedRoute>} />
+        <Route path="work-centers" element={<ProtectedRoute allowedRoles={MFG_READ_ROLES}><WorkCentersPage /></ProtectedRoute>} />
+        <Route path="operations" element={<ProtectedRoute allowedRoles={MFG_READ_ROLES}><OperationsPage /></ProtectedRoute>} />
+
         {/* Users — admin only */}
         <Route path="users" element={<ProtectedRoute allowedRoles={[ROLES.ADMIN]}><UsersPage /></ProtectedRoute>} />
         <Route path="users/:id" element={<ProtectedRoute allowedRoles={[ROLES.ADMIN]}><UserDetailPage /></ProtectedRoute>} />
@@ -115,4 +141,5 @@ const AppRoutes = () => {
 }
 
 export default AppRoutes
+
 
