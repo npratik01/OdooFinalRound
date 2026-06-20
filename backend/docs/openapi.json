@@ -1,0 +1,506 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Mini ERP System - Phase 1 API Documentation",
+    "description": "REST API documentation for Phase 1 of the production-grade Mini ERP system, featuring role-based access controls (RBAC) and data schemas.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:5000/api",
+      "description": "Local Development Server"
+    }
+  ],
+  "paths": {
+    "/auth/login": {
+      "post": {
+        "summary": "Authenticate user and issue JWT token",
+        "description": "Public endpoint. Authenticates user and returns JWT token plus user profile data.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["email", "password"],
+                "properties": {
+                  "email": {
+                    "type": "string",
+                    "format": "email",
+                    "example": "admin@erp.com"
+                  },
+                  "password": {
+                    "type": "string",
+                    "example": "Admin@123"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Authentication successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "message": { "type": "string", "example": "Login successful" },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "token": { "type": "string", "example": "eyJhbGciOiJIUzI1NiIsInR5..." },
+                        "user": {
+                          "type": "object",
+                          "properties": {
+                            "id": { "type": "string", "example": "60d000000000000000000001" },
+                            "name": { "type": "string", "example": "System Administrator" },
+                            "email": { "type": "string", "example": "admin@erp.com" },
+                            "role": { "type": "string", "example": "ADMIN" }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input format"
+          },
+          "401": {
+            "description": "Invalid credentials or account inactive"
+          }
+        }
+      }
+    },
+    "/users": {
+      "get": {
+        "summary": "List all users",
+        "description": "Returns a paginated list of users. Filterable by name/email search, role, and active status.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 10 } },
+          { "name": "search", "in": "query", "schema": { "type": "string" } },
+          { "name": "role", "in": "query", "schema": { "type": "string" } },
+          { "name": "isActive", "in": "query", "schema": { "type": "boolean" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Users list fetched successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean", "example": true },
+                    "message": { "type": "string", "example": "Users fetched successfully" },
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/User" }
+                    },
+                    "meta": { "$ref": "#/components/schemas/PaginationMeta" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a new user",
+        "description": "Admin only. Creates a new user profile with role-based attributes.",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["name", "email", "password", "role"],
+                "properties": {
+                  "name": { "type": "string", "example": "Inventory Specialist" },
+                  "email": { "type": "string", "format": "email", "example": "spec@erp.com" },
+                  "password": { "type": "string", "example": "SecurePass@123" },
+                  "role": { "type": "string", "enum": ["ADMIN", "BUSINESS_OWNER", "INVENTORY_MANAGER", "SALES_USER", "PURCHASE_USER"] }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User created successfully"
+          }
+        }
+      }
+    },
+    "/users/{id}": {
+      "get": {
+        "summary": "Get user details by ID",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": {
+            "description": "User details fetched successfully"
+          }
+        }
+      },
+      "put": {
+        "summary": "Replace user details",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": { "type": "string" },
+                  "role": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "User updated successfully" }
+        }
+      }
+    },
+    "/users/{id}/status": {
+      "patch": {
+        "summary": "Toggle user active status",
+        "description": "Admin only. Actives/deactivates a user account. Users cannot self-deactivate.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["isActive"],
+                "properties": {
+                  "isActive": { "type": "boolean", "example": false }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Status updated successfully" }
+        }
+      }
+    },
+    "/products": {
+      "get": {
+        "summary": "List products in catalog",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer" } },
+          { "name": "search", "in": "query", "schema": { "type": "string" } },
+          { "name": "sku", "in": "query", "schema": { "type": "string" } },
+          { "name": "productType", "in": "query", "schema": { "type": "string" } },
+          { "name": "procurementStrategy", "in": "query", "schema": { "type": "string" } },
+          { "name": "procurementType", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "Products fetched successfully"
+          }
+        }
+      },
+      "post": {
+        "summary": "Create a new product",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ProductInput" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "description": "Product created successfully" }
+        }
+      }
+    },
+    "/products/{id}": {
+      "get": {
+        "summary": "Get product details by ID",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "Product fetched" }
+        }
+      },
+      "put": {
+        "summary": "Update product details",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ProductInput" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Product updated" }
+        }
+      }
+    },
+    "/products/{id}/status": {
+      "patch": {
+        "summary": "Toggle active status of a product",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["isActive"],
+                "properties": {
+                  "isActive": { "type": "boolean" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Product status updated" }
+        }
+      }
+    },
+    "/inventory": {
+      "get": {
+        "summary": "Get all inventory items",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "page", "in": "query", "schema": { "type": "integer" } },
+          { "name": "stockStatus", "in": "query", "schema": { "type": "string", "enum": ["NORMAL", "LOW_STOCK"] } }
+        ],
+        "responses": {
+          "200": { "description": "Inventory list fetched" }
+        }
+      }
+    },
+    "/inventory/{productId}/adjust": {
+      "patch": {
+        "summary": "Set absolute inventory quantities directly",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "productId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "onHandQty": { "type": "integer" },
+                  "reservedQty": { "type": "integer" },
+                  "minimumStockLevel": { "type": "integer" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Inventory updated" }
+        }
+      }
+    },
+    "/inventory/{productId}/increase": {
+      "post": {
+        "summary": "Increase on-hand stock quantity",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "productId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["qty"],
+                "properties": {
+                  "qty": { "type": "integer", "minimum": 1, "example": 10 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Stock increased" }
+        }
+      }
+    },
+    "/inventory/{productId}/decrease": {
+      "post": {
+        "summary": "Decrease on-hand stock quantity",
+        "description": "Subtracts stock. Fails if resulting freeToUseQty would drop below zero.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "productId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["qty"],
+                "properties": {
+                  "qty": { "type": "integer", "minimum": 1 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Stock decreased" }
+        }
+      }
+    },
+    "/inventory/{productId}/reserve": {
+      "post": {
+        "summary": "Reserve stock quantity",
+        "description": "Increases reservedQty. Fails if requested amount exceeds current freeToUseQty.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "productId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["qty"],
+                "properties": {
+                  "qty": { "type": "integer", "minimum": 1 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Stock reserved" }
+        }
+      }
+    },
+    "/inventory/{productId}/release": {
+      "post": {
+        "summary": "Release reserved stock quantity",
+        "description": "Decreases reservedQty and restores units to freeToUseQty.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "name": "productId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["qty"],
+                "properties": {
+                  "qty": { "type": "integer", "minimum": 1 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Stock released" }
+        }
+      }
+    },
+    "/dashboard/stats": {
+      "get": {
+        "summary": "Get dashboard core KPIs",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Stats fetched successfully" }
+        }
+      }
+    },
+    "/dashboard/inventory-status": {
+      "get": {
+        "summary": "Get aggregate chart data and top products listings",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Inventory status fetched" }
+        }
+      }
+    },
+    "/dashboard/recent-products": {
+      "get": {
+        "summary": "Get recent 10 active products in system",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Recent products fetched" }
+        }
+      }
+    },
+    "/dashboard/low-stock-products": {
+      "get": {
+        "summary": "Get inventory alerts containing critical deficit values",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": { "description": "Low stock products fetched" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    },
+    "schemas": {
+      "User": {
+        "type": "object",
+        "properties": {
+          "_id": { "type": "string" },
+          "name": { "type": "string" },
+          "email": { "type": "string" },
+          "role": { "type": "string" },
+          "isActive": { "type": "boolean" },
+          "createdAt": { "type": "string", "format": "date-time" }
+        }
+      },
+      "ProductInput": {
+        "type": "object",
+        "required": ["productName", "productType", "procurementStrategy", "procurementType"],
+        "properties": {
+          "productName": { "type": "string", "example": "Steel Pinion" },
+          "description": { "type": "string" },
+          "salesPrice": { "type": "number", "minimum": 0 },
+          "costPrice": { "type": "number", "minimum": 0 },
+          "productType": { "type": "string", "enum": ["FINISHED_GOOD", "RAW_MATERIAL", "COMPONENT"] },
+          "procurementStrategy": { "type": "string", "enum": ["MTS", "MTO"] },
+          "procurementType": { "type": "string", "enum": ["PURCHASE", "MANUFACTURING"] },
+          "vendor": { "type": "string" }
+        }
+      },
+      "PaginationMeta": {
+        "type": "object",
+        "properties": {
+          "total": { "type": "integer" },
+          "page": { "type": "integer" },
+          "limit": { "type": "integer" },
+          "totalPages": { "type": "integer" },
+          "hasNextPage": { "type": "boolean" },
+          "hasPrevPage": { "type": "boolean" }
+        }
+      }
+    }
+  }
+}
