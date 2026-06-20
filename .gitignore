@@ -1,0 +1,126 @@
+# ===============================
+# Node Modules
+# ===============================
+node_modules/
+**/node_modules/
+
+# ===============================
+# Environment Variables
+# ===============================
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+
+# ===============================
+# Logs
+# ===============================
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+logs/
+*.log
+
+
+# ===============================
+# React / Vite Frontend
+# ===============================
+frontend/dist/
+frontend/build/
+
+.vite/
+**/.vite/
+
+frontend/.vite/
+
+# Vite cache
+frontend/node_modules/.vite/
+
+# ===============================
+# Backend
+# ===============================
+backend/dist/
+backend/build/
+
+
+# ===============================
+# Coverage / Testing
+# ===============================
+coverage/
+.nyc_output/
+
+
+# ===============================
+# OS Generated Files
+# ===============================
+.DS_Store
+Thumbs.db
+
+
+# ===============================
+# IDE / Editor
+# ===============================
+.vscode/
+.idea/
+
+*.swp
+*.swo
+
+
+# ===============================
+# Temporary Files
+# ===============================
+*.tmp
+*.temp
+*.cache
+
+
+# ===============================
+# Database Files
+# ===============================
+*.db
+*.sqlite
+*.sqlite3
+
+
+# ===============================
+# Uploads / Storage
+# ===============================
+uploads/
+public/uploads/
+
+
+# ===============================
+# MongoDB Dumps
+# ===============================
+dump/
+
+
+# ===============================
+# Certificates / Keys
+# ===============================
+*.pem
+*.key
+*.crt
+
+
+# ===============================
+# Frontend specific
+# ===============================
+frontend/.env*
+frontend/node_modules/
+
+# ===============================
+# Backend specific
+# ===============================
+backend/.env*
+backend/node_modules/
+
+
+# ===============================
+# Generated Files
+# ===============================
+*.map
