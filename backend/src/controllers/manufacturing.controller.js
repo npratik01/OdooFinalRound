@@ -130,6 +130,23 @@ const completeWorkOrder = async (req, res) => {
   }
 };
 
+// ─── Reject Manufacturing Order ───────────────────────────────────────────────
+const rejectManufacturingOrder = async (req, res) => {
+  try {
+    const mo = await manufacturingService.rejectManufacturingOrder(
+      req.params.id,
+      req.body,
+      req.user._id
+    );
+    return sendSuccess(res, { data: mo, message: `Manufacturing Order rejected: ${mo.moNumber}` });
+  } catch (err) {
+    logger.error('rejectManufacturingOrder error:', err);
+    if (err.statusCode === 404) return sendNotFound(res, err.message);
+    if (err.statusCode) return sendError(res, { message: err.message, statusCode: err.statusCode });
+    return sendError(res, { message: 'Failed to reject Manufacturing Order' });
+  }
+};
+
 module.exports = {
   createManufacturingOrder,
   getManufacturingOrders,
@@ -138,6 +155,7 @@ module.exports = {
   startProduction,
   produceOutput,
   cancelManufacturingOrder,
+  rejectManufacturingOrder,
   getManufacturingDashboard,
   getWorkOrdersByMO,
   completeWorkOrder,
