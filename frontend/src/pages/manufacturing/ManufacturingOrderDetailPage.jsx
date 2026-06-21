@@ -12,11 +12,12 @@ import TraceabilityTree from '../../components/common/TraceabilityTree'
 const MFG_ROLES = [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.MANUFACTURING_USER]
 
 const STATUS_COLORS = {
-  'DRAFT':       'bg-slate-700/80 text-slate-300 border-slate-600',
-  'CONFIRMED':   'bg-blue-500/15 text-blue-400 border-blue-500/30',
-  'IN_PROGRESS': 'bg-amber-500/15 text-amber-400 border-amber-500/30',
-  'DONE':        'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
-  'CANCELLED':   'bg-red-500/15 text-red-400 border-red-500/30',
+  'DRAFT':                  'bg-slate-700/80 text-slate-300 border-slate-600',
+  'CONFIRMED':              'bg-blue-500/15 text-blue-400 border-blue-500/30',
+  'WAITING_FOR_COMPONENTS': 'bg-indigo-500/15 text-indigo-400 border-indigo-500/30',
+  'IN_PROGRESS':            'bg-amber-500/15 text-amber-400 border-amber-500/30',
+  'DONE':                   'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
+  'CANCELLED':              'bg-red-500/15 text-red-400 border-red-500/30',
 }
 
 export default function ManufacturingOrderDetailPage() {
@@ -92,9 +93,9 @@ export default function ManufacturingOrderDetailPage() {
   if (!mo) return <div className="p-6 text-center text-slate-400">Manufacturing Order not found</div>
 
   const canConfirm = mo.status === 'DRAFT' && canManage
-  const canStart   = mo.status === 'CONFIRMED' && canManage
+  const canStart   = ['CONFIRMED', 'WAITING_FOR_COMPONENTS'].includes(mo.status) && canManage
   const canProduce = mo.status === 'IN_PROGRESS' && canManage
-  const canCancel  = ['DRAFT', 'CONFIRMED', 'IN_PROGRESS'].includes(mo.status) && canManage
+  const canCancel  = ['DRAFT', 'CONFIRMED', 'WAITING_FOR_COMPONENTS', 'IN_PROGRESS'].includes(mo.status) && canManage
 
   const remainingToProduce = mo.plannedQty - mo.producedQty
 

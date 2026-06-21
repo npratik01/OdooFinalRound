@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useSalesOrders, useCreateSalesOrder, useUpdateSalesOrder } from '../../hooks/useSales'
-import { useCustomers } from '../../hooks/useCustomers'
+import { useCustomers, useCustomer } from '../../hooks/useCustomers'
 import { useProducts } from '../../hooks/useProducts'
 import { Link } from 'react-router-dom'
+import SearchableSelect from '../../components/common/SearchableSelect'
 import { Plus, Search, Eye, Edit3, Trash2, Filter } from 'lucide-react'
 import DataTable from '../../components/tables/DataTable'
 import Button from '../../components/common/Button'
@@ -41,7 +42,52 @@ const SalesOrderForm = ({
   onCancel,
   submitLabel = 'Save as Draft',
 }) => {
-  const [customerId, setCustomerId] = useState(initialValues?.customerId || '')
+  const [customerId, setCustomerId] = useState(
+    initialValues?.customerId?._id || initialValues?.customerId || ''
+  )
+  const [customerSearch, setCustomerSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(customerSearch)
+    }, 300)
+    return () => clearTimeout(timer)
+  }, [customerSearch])
+
+  // Get active customers matching the search term (limit 50 to scale)
+  const { data: customersData, isLoading: isCustomersLoading } = useCustomers({
+    isActive: 'true',
+    search: debouncedSearch,
+    limit: 50,
+  })
+
+  // Get current customer if selected (especially useful for editing where the selected customer might not be in search results)
+  const { data: selectedCustomer } = useCustomer(customerId)
+
+  // Merge selected customer into options if not already present
+  const fetchedCustomers = customersData?.data || []
+  const mergedCustomers = [...fetchedCustomers]
+
+  // If we have initialValues?.customerId as an object, let's also merge it directly to avoid a flash of loading
+  const initialCustomerObj =
+    initialValues?.customerId && typeof initialValues.customerId === 'object'
+      ? initialValues.customerId
+      : null
+
+  if (initialCustomerObj && !mergedCustomers.some((c) => c._id === initialCustomerObj._id)) {
+    mergedCustomers.unshift(initialCustomerObj)
+  }
+  if (selectedCustomer && !mergedCustomers.some((c) => c._id === selectedCustomer._id)) {
+    mergedCustomers.unshift(selectedCustomer)
+  }
+
+  const customerOptions = mergedCustomers.map((c) => ({
+    value: c._id,
+    label: c.customerName,
+    sublabel: c.customerCode,
+  }))
+
   const [remarks, setRemarks] = useState(initialValues?.remarks || '')
   const [orderDate, setOrderDate] = useState(
     initialValues?.orderDate
@@ -100,21 +146,16 @@ const SalesOrderForm = ({
       {/* Customer + Date */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Customer *</label>
-          <select
-            id="customer-select"
-            className="bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-sm text-slate-200 focus:outline-none focus:border-primary-500 transition-colors"
+          <SearchableSelect
+            label="Customer *"
             value={customerId}
-            onChange={(e) => setCustomerId(e.target.value)}
+            onChange={setCustomerId}
+            options={customerOptions}
+            onSearchChange={setCustomerSearch}
+            isLoading={isCustomersLoading}
+            placeholder="Select Customer"
             required
-          >
-            <option value="">Select Customer</option>
-            {customers.map((c) => (
-              <option key={c._id} value={c._id}>
-                {c.customerName} ({c.customerCode})
-              </option>
-            ))}
-          </select>
+          />
         </div>
         <div className="flex flex-col gap-1.5">
           <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Order Date</label>
@@ -264,11 +305,8 @@ const SalesOrdersPage = () => {
   const createOrderMutation = useCreateSalesOrder()
   const updateOrderMutation = useUpdateSalesOrder()
 
-  const { data: customersData } = useCustomers({ isActive: true, limit: 200 })
   const { data: productsData } = useProducts({ isActive: true, limit: 200 })
-
-  const customers = customersData?.customers || []
-  const products = productsData?.products || []
+  const products = productsData?.data || []
 
   const [modalMode, setModalMode] = useState(null) // 'create' | 'edit'
   const [editingOrder, setEditingOrder] = useState(null)
@@ -452,7 +490,6 @@ const SalesOrdersPage = () => {
       >
         {modalMode === 'create' && (
           <SalesOrderForm
-            customers={customers}
             products={products}
             onSubmit={handleCreate}
             isLoading={createOrderMutation.isLoading}
@@ -462,7 +499,6 @@ const SalesOrdersPage = () => {
         )}
         {modalMode === 'edit' && editingOrder && (
           <SalesOrderForm
-            customers={customers}
             products={products}
             initialValues={editingOrder}
             onSubmit={handleEdit}

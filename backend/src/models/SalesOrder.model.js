@@ -53,7 +53,7 @@ const salesOrderSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['Draft', 'Confirmed', 'Partially Delivered', 'Fully Delivered', 'Cancelled'],
+    enum: ['Draft', 'Confirmed', 'Ready For Delivery', 'Partially Delivered', 'Fully Delivered', 'Cancelled'],
     default: 'Draft',
     index: true
   },

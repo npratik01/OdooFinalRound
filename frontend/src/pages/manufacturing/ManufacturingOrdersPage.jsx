@@ -9,14 +9,15 @@ import { ROLES } from '../../constants/roles'
 const MFG_ROLES = [ROLES.ADMIN, ROLES.BUSINESS_OWNER, ROLES.MANUFACTURING_USER]
 
 const STATUS_COLORS = {
-  'DRAFT':       'bg-slate-700 text-slate-300',
-  'CONFIRMED':   'bg-blue-500/15 text-blue-400',
-  'IN_PROGRESS': 'bg-amber-500/15 text-amber-400',
-  'DONE':        'bg-emerald-500/15 text-emerald-400',
-  'CANCELLED':   'bg-red-500/15 text-red-400',
+  'DRAFT':                  'bg-slate-700 text-slate-300',
+  'CONFIRMED':              'bg-blue-500/15 text-blue-400',
+  'WAITING_FOR_COMPONENTS': 'bg-indigo-500/15 text-indigo-400',
+  'IN_PROGRESS':            'bg-amber-500/15 text-amber-400',
+  'DONE':                   'bg-emerald-500/15 text-emerald-400',
+  'CANCELLED':              'bg-red-500/15 text-red-400',
 }
 
-const STATUS_OPTIONS = ['DRAFT', 'CONFIRMED', 'IN_PROGRESS', 'DONE', 'CANCELLED']
+const STATUS_OPTIONS = ['DRAFT', 'CONFIRMED', 'WAITING_FOR_COMPONENTS', 'IN_PROGRESS', 'DONE', 'CANCELLED']
 
 export default function ManufacturingOrdersPage() {
   const { hasRole } = useAuth()

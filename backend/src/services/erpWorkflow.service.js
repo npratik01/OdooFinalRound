@@ -12,6 +12,7 @@ const Traceability = require('../models/Traceability.model');
 const User = require('../models/User.model');
 
 const inventoryService = require('./inventory.service');
+const deliveryService = require('./delivery.service');
 const manufacturingService = require('./manufacturing.service');
 const purchaseService = require('./purchase.service');
 const logger = require('../utils/logger');
@@ -73,6 +74,56 @@ const handleSalesOrderConfirmed = async (salesOrderId, userId) => {
           quantity: qtyToReserve,
           status: 'SUCCESS',
         });
+
+        // ── Auto Partial Delivery ───────────────────────────────────────────
+        // For FINISHED_GOOD / MTO products: immediately ship available stock.
+        // This gives the customer what is on hand now; manufacturing covers rest.
+        if (product.productType === 'FINISHED_GOOD' || deficit > 0) {
+          try {
+            logger.info(
+              `[ORCHESTRATOR] Auto-dispatching partial delivery of ${qtyToReserve} × ${product.productName} for SO ${order.soNumber}`
+            );
+            const partialDelivery = await deliveryService.processDelivery({
+              soId: order._id,
+              items: [{ productId: item.productId, quantityShipped: qtyToReserve }],
+            }, userId);
+
+            triggeredActions.push({
+              type: 'PARTIAL_DELIVERY',
+              documentId: partialDelivery._id,
+              documentNumber: partialDelivery.deliveryNumber,
+              productId: item.productId,
+              productName: product.productName,
+              quantity: qtyToReserve,
+              status: 'SUCCESS',
+            });
+
+            logger.info(
+              `[ORCHESTRATOR] Partial delivery ${partialDelivery.deliveryNumber} created — ` +
+              `shipped ${qtyToReserve} of ${requestedQty} × ${product.productName}`
+            );
+
+            // Audit log for partial delivery
+            await AuditLog.create({
+              userId,
+              action: 'SO_PARTIAL_DELIVERY_AUTO',
+              module: 'SALES',
+              details: {
+                salesOrderId: order._id,
+                soNumber: order.soNumber,
+                deliveryNumber: partialDelivery.deliveryNumber,
+                shippedQty: qtyToReserve,
+                orderedQty: requestedQty,
+                remainingQty: deficit,
+                product: product.productName,
+              },
+            });
+          } catch (deliveryErr) {
+            logger.warn(
+              `[ORCHESTRATOR] Auto partial delivery failed for SO ${order.soNumber}: ${deliveryErr.message}. Continuing with procurement...`
+            );
+          }
+        }
       }
 
       // Handle deficit via Procurement Automation
@@ -109,6 +160,7 @@ const handleSalesOrderConfirmed = async (salesOrderId, userId) => {
             plannedQty: deficit,
             workCenterId: workCenter ? workCenter._id : undefined,
             remarks: `Auto-generated via ERP Orchestrator to fulfill deficit of SO ${order.soNumber}`,
+            linkedSoId: order._id,
           }, userId);
 
           triggeredActions.push({

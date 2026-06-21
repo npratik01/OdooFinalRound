@@ -25,7 +25,7 @@ export default function CreatePurchaseOrderPage() {
   const { data: products } = useQuery({
     queryKey: ['products-all'],
     queryFn:  () => productApi.getProducts({ limit: 200 }),
-    select:   r => r.data?.data?.products || [],
+    select:   r => r.data?.data || [],
   })
 
   const { register, handleSubmit, control, watch, formState: { errors } } = useForm({

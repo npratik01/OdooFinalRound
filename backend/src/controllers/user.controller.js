@@ -32,6 +32,9 @@ const createUser = async (req, res, next) => {
 
 const updateUser = async (req, res, next) => {
   try {
+    if (!req.body.password) {
+      delete req.body.password;
+    }
     const user = await userService.updateUser(req.params.id, req.body);
     return sendSuccess(res, { message: 'User updated successfully', data: user });
   } catch (err) {

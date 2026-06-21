@@ -338,6 +338,15 @@ const receiveGoods = async (poId, receiptData, userId) => {
 
   logger.info(`Goods Receipt processed: ${grNumber} for PO ${po.poNumber}. New status: ${po.status}`);
 
+  // ── Procurement Automation Hook: try to unblock waiting MOs ─────────────
+  // Non-blocking: GRN success is never affected by MO resume errors.
+  try {
+    const procurementAutomation = require('./procurementAutomation.service');
+    await procurementAutomation.resumeManufacturingAfterReceipt(poId, userId);
+  } catch (hookErr) {
+    logger.warn(`[PURCHASE] procurementAutomation hook failed after GRN ${grNumber}:`, hookErr.message);
+  }
+
   return {
     goodsReceipt: await GoodsReceipt.findById(goodsReceipt._id)
       .populate('poId', 'poNumber vendorId status')

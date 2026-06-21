@@ -45,7 +45,7 @@ const getManufacturingOrderById = async (req, res) => {
 // ─── Confirm Manufacturing Order ──────────────────────────────────────────────
 const confirmManufacturingOrder = async (req, res) => {
   try {
-    const mo = await manufacturingService.confirmManufacturingOrder(req.params.id);
+    const mo = await manufacturingService.confirmManufacturingOrder(req.params.id, req.user._id);
     return sendSuccess(res, { data: mo, message: `Manufacturing Order confirmed: ${mo.moNumber}` });
   } catch (err) {
     logger.error('confirmManufacturingOrder error:', err);
@@ -106,6 +106,30 @@ const getManufacturingDashboard = async (req, res) => {
   }
 };
 
+// ─── Work Order Actions ───────────────────────────────────────────────────────
+const getWorkOrdersByMO = async (req, res) => {
+  try {
+    const wos = await manufacturingService.getWorkOrdersByMO(req.query.moId || req.params.moId);
+    return sendSuccess(res, { data: wos, message: 'Work Orders retrieved successfully' });
+  } catch (err) {
+    logger.error('getWorkOrdersByMO error:', err);
+    if (err.statusCode) return sendError(res, { message: err.message, statusCode: err.statusCode });
+    return sendError(res, { message: 'Failed to retrieve Work Orders' });
+  }
+};
+
+const completeWorkOrder = async (req, res) => {
+  try {
+    const wo = await manufacturingService.completeWorkOrder(req.params.id, req.user._id);
+    return sendSuccess(res, { data: wo, message: `Work Order completed: ${wo.woNumber}` });
+  } catch (err) {
+    logger.error('completeWorkOrder error:', err);
+    if (err.statusCode === 404) return sendNotFound(res, err.message);
+    if (err.statusCode) return sendError(res, { message: err.message, statusCode: err.statusCode });
+    return sendError(res, { message: 'Failed to complete Work Order' });
+  }
+};
+
 module.exports = {
   createManufacturingOrder,
   getManufacturingOrders,
@@ -115,4 +139,6 @@ module.exports = {
   produceOutput,
   cancelManufacturingOrder,
   getManufacturingDashboard,
+  getWorkOrdersByMO,
+  completeWorkOrder,
 };

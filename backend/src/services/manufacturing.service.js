@@ -57,6 +57,7 @@ const createManufacturingOrder = async (data, userId) => {
     components,
     remarks: data.remarks || '',
     createdBy: userId,
+    linkedSoId: data.linkedSoId || null,
   });
 
   await mo.save();
@@ -106,34 +107,46 @@ const getManufacturingOrderById = async (id) => {
 
 // ─── CONFIRM Manufacturing Order ──────────────────────────────────────────────
 
-const confirmManufacturingOrder = async (id) => {
+const confirmManufacturingOrder = async (id, userId) => {
   const mo = await ManufacturingOrder.findById(id);
   if (!mo) throw { statusCode: 404, message: 'Manufacturing Order not found' };
   if (mo.status !== MO_STATUS.DRAFT) {
     throw { statusCode: 400, message: `Cannot confirm MO in '${mo.status}' status. Must be DRAFT.` };
   }
 
-  // Check component availability (freeToUseQty)
-  const shortages = [];
-  for (const comp of mo.components) {
-    const inv = await Inventory.findOne({ productId: comp.productId });
-    if (!inv) {
-      shortages.push(`No inventory record for component ${comp.productId}`);
-      continue;
+  // Explode BoM components onto the MO (if not already loaded)
+  if (!mo.components || mo.components.length === 0) {
+    const bom = await BillOfMaterials.findById(mo.bomId);
+    if (bom) {
+      const multiplier = mo.plannedQty / (bom.quantity || 1);
+      mo.components = bom.components.map(c => ({
+        productId: c.productId,
+        requiredQty: Math.ceil(c.quantity * multiplier),
+        consumedQty: 0,
+        reservedQty: 0,
+      }));
     }
-    const freeQty = Math.max(0, inv.onHandQty - inv.reservedQty);
-    if (comp.requiredQty > freeQty) {
-      shortages.push(`Insufficient stock for component ${comp.productId}: need ${comp.requiredQty}, available ${freeQty}`);
-    }
-  }
-
-  if (shortages.length > 0) {
-    throw { statusCode: 400, message: `Component shortage detected:\n${shortages.join('\n')}` };
   }
 
   mo.status = MO_STATUS.CONFIRMED;
   await mo.save();
   logger.info(`Manufacturing Order confirmed: ${mo.moNumber}`);
+
+  // ── Procurement Automation: check component availability ─────────────────
+  const procurementAutomation = require('./procurementAutomation.service');
+  const { allAvailable, shortages } = await procurementAutomation.checkComponentAvailability(mo._id);
+
+  if (!allAvailable) {
+    logger.info(
+      `[MANUFACTURING] Component shortages detected for MO ${mo.moNumber}: ` +
+      shortages.map(s => `${s.productName} (short by ${s.shortage})`).join(', ')
+    );
+    await procurementAutomation.createShortagePurchaseOrders(mo._id, shortages, userId);
+    // MO is now WAITING_FOR_COMPONENTS — return early
+    return populateMO(mo._id);
+  }
+
+  logger.info(`[MANUFACTURING] All components available for MO ${mo.moNumber}. Ready for production.`);
   return populateMO(mo._id);
 };
 
@@ -142,8 +155,8 @@ const confirmManufacturingOrder = async (id) => {
 const startProduction = async (id, userId) => {
   const mo = await ManufacturingOrder.findById(id);
   if (!mo) throw { statusCode: 404, message: 'Manufacturing Order not found' };
-  if (mo.status !== MO_STATUS.CONFIRMED) {
-    throw { statusCode: 400, message: `Cannot start production for MO in '${mo.status}' status. Must be CONFIRMED.` };
+  if (![MO_STATUS.CONFIRMED, MO_STATUS.WAITING_FOR_COMPONENTS].includes(mo.status)) {
+    throw { statusCode: 400, message: `Cannot start production for MO in '${mo.status}' status. Must be CONFIRMED or WAITING_FOR_COMPONENTS.` };
   }
 
   // Reserve component stock
@@ -183,6 +196,25 @@ const startProduction = async (id, userId) => {
   mo.status = MO_STATUS.IN_PROGRESS;
   await mo.save();
   logger.info(`Manufacturing Order started: ${mo.moNumber} — components reserved`);
+
+  // Auto-generate Work Orders: Assembly, Painting, Packing
+  const WorkOrder = require('../models/WorkOrder.model');
+  const count = await WorkOrder.countDocuments();
+  let baseNum = count + 1;
+  const steps = ['Assembly', 'Painting', 'Packing'];
+  for (const stepName of steps) {
+    const wo = new WorkOrder({
+      woNumber: `WO-${String(baseNum++).padStart(3, '0')}`,
+      moId: mo._id,
+      name: stepName,
+      workCenterId: mo.workCenterId,
+      status: 'PENDING',
+      createdBy: userId,
+    });
+    await wo.save();
+  }
+  logger.info(`Work Orders (Assembly, Painting, Packing) generated for MO ${mo.moNumber}`);
+
   return populateMO(mo._id);
 };
 
@@ -225,6 +257,19 @@ const produceOutput = async (id, data, userId) => {
       inv.stockStatus = inv.onHandQty <= inv.minimumStockLevel ? STOCK_STATUS.LOW_STOCK : STOCK_STATUS.NORMAL;
       await inv.save({ validateBeforeSave: false });
 
+      // Log the consumption movement in the ledger
+      await movementService.createMovement({
+        productId: comp.productId,
+        movementType: 'MFG_COMPONENT_CONSUME',
+        quantity: -actualConsume,
+        previousQty: prevOnHand,
+        newQty: inv.onHandQty,
+        referenceType: 'ManufacturingOrder',
+        referenceId: mo._id,
+        remarks: `Component consumed for MO ${mo.moNumber}`,
+        createdBy: userId,
+      });
+
       comp.consumedQty += actualConsume;
       comp.reservedQty = Math.max(0, comp.reservedQty - actualConsume);
     }
@@ -266,6 +311,71 @@ const produceOutput = async (id, data, userId) => {
     mo.status = MO_STATUS.DONE;
     mo.completedDate = new Date();
     logger.info(`Manufacturing Order DONE: ${mo.moNumber}`);
+
+    // Update Sales Order status to 'Ready For Delivery' if triggered by a Sales Order
+    const Traceability = require('../models/Traceability.model');
+    const trace = await Traceability.findOne({
+      targetDocId: mo._id,
+      sourceDocType: 'SalesOrder',
+    });
+    if (trace) {
+      const SalesOrder = require('../models/SalesOrder.model');
+      const so = await SalesOrder.findById(trace.sourceDocId);
+      if (so) {
+        // ── MTO Reservation: reserve the newly produced qty for the linked SO ──
+        // The SO already has some units reserved (from initial available stock).
+        // Newly produced units must also be reserved so that shipStock() can
+        // release them during delivery. We reserve exactly what we just produced.
+        const freshFinInv = await Inventory.findOne({ productId: mo.productId });
+        if (freshFinInv) {
+          const prevReserved = freshFinInv.reservedQty;
+          freshFinInv.reservedQty += producingQty;
+          await freshFinInv.save({ validateBeforeSave: false });
+          logger.info(
+            `[WORKFLOW] Reserved ${producingQty} newly produced units of finished good for SO ${so.soNumber} ` +
+            `(reservedQty: ${prevReserved} → ${freshFinInv.reservedQty})`
+          );
+
+          // Log the reservation movement in the ledger
+          await movementService.createMovement({
+            productId: mo.productId,
+            movementType: 'MFG_OUTPUT_PRODUCE',
+            quantity: producingQty,
+            previousQty: prevReserved,
+            newQty: freshFinInv.reservedQty,
+            referenceType: 'SalesOrder',
+            referenceId: so._id,
+            remarks: `MTO output reserved for SO ${so.soNumber} upon MO ${mo.moNumber} completion`,
+            createdBy: userId,
+          });
+        }
+
+        so.status = 'Ready For Delivery';
+        await so.save();
+        logger.info(`[WORKFLOW] Updated Sales Order ${so.soNumber} status to Ready For Delivery`);
+
+        // Log Audit Log & Notification for SO update
+        const AuditLog = require('../models/AuditLog.model');
+        const Notification = require('../models/Notification.model');
+        await AuditLog.create({
+          userId,
+          action: 'SALES_ORDER_READY_FOR_DELIVERY',
+          module: 'SALES',
+          details: {
+            salesOrderId: so._id,
+            soNumber: so.soNumber,
+            moNumber: mo.moNumber,
+          },
+        });
+
+        await Notification.create({
+          userId: so.createdBy,
+          title: `Sales Order ${so.soNumber} Ready`,
+          message: `Manufacturing Order ${mo.moNumber} is complete. Sales Order ${so.soNumber} is now Ready For Delivery.`,
+          type: 'SUCCESS',
+        });
+      }
+    }
   }
 
   await mo.save();
@@ -305,12 +415,68 @@ const cancelManufacturingOrder = async (id, userId) => {
         }
       }
     }
+
+    // Cancel pending work orders
+    const WorkOrder = require('../models/WorkOrder.model');
+    await WorkOrder.deleteMany({ moId: mo._id, status: { $ne: 'COMPLETED' } });
   }
 
   mo.status = MO_STATUS.CANCELLED;
   await mo.save();
   logger.info(`Manufacturing Order cancelled: ${mo.moNumber}`);
   return populateMO(mo._id);
+};
+
+// ─── WORK ORDER OPERATIONS ────────────────────────────────────────────────────
+
+const getWorkOrdersByMO = async (moId) => {
+  const WorkOrder = require('../models/WorkOrder.model');
+  return WorkOrder.find({ moId }).populate('workCenterId', 'code name');
+};
+
+const completeWorkOrder = async (woId, userId) => {
+  const WorkOrder = require('../models/WorkOrder.model');
+  const wo = await WorkOrder.findById(woId);
+  if (!wo) throw { statusCode: 404, message: 'Work Order not found' };
+  if (wo.status === 'COMPLETED') {
+    throw { statusCode: 400, message: 'Work Order is already completed' };
+  }
+
+  wo.status = 'COMPLETED';
+  wo.completedBy = userId;
+  wo.completedAt = new Date();
+  await wo.save();
+
+  // Create audit log for work order completion
+  const AuditLog = require('../models/AuditLog.model');
+  await AuditLog.create({
+    userId,
+    action: 'WORK_ORDER_COMPLETED',
+    module: 'MANUFACTURING',
+    details: {
+      workOrderId: wo._id,
+      woNumber: wo.woNumber,
+      name: wo.name,
+      moId: wo.moId,
+    },
+  });
+
+  // Check if all work orders for this MO are completed
+  const total = await WorkOrder.countDocuments({ moId: wo.moId });
+  const completed = await WorkOrder.countDocuments({ moId: wo.moId, status: 'COMPLETED' });
+
+  if (total === completed) {
+    const mo = await ManufacturingOrder.findById(wo.moId);
+    if (mo && mo.status === MO_STATUS.IN_PROGRESS) {
+      logger.info(`[MANUFACTURING] All Work Orders completed for MO ${mo.moNumber}. Completing MO...`);
+      await produceOutput(mo._id, {
+        producedQty: mo.plannedQty - mo.producedQty,
+        remarks: 'Automatically completed upon completion of all Work Orders.',
+      }, userId);
+    }
+  }
+
+  return wo;
 };
 
 module.exports = {
@@ -321,4 +487,6 @@ module.exports = {
   startProduction,
   produceOutput,
   cancelManufacturingOrder,
+  getWorkOrdersByMO,
+  completeWorkOrder,
 };

@@ -4,11 +4,12 @@ const mongoose = require('mongoose');
 
 // ─── MO Status constants ───────────────────────────────────────────────────────
 const MO_STATUS = Object.freeze({
-  DRAFT:       'DRAFT',
-  CONFIRMED:   'CONFIRMED',
-  IN_PROGRESS: 'IN_PROGRESS',
-  DONE:        'DONE',
-  CANCELLED:   'CANCELLED',
+  DRAFT:                  'DRAFT',
+  CONFIRMED:              'CONFIRMED',
+  WAITING_FOR_COMPONENTS: 'WAITING_FOR_COMPONENTS',
+  IN_PROGRESS:            'IN_PROGRESS',
+  DONE:                   'DONE',
+  CANCELLED:              'CANCELLED',
 });
 
 // ─── MO Component Sub-Schema ──────────────────────────────────────────────────
@@ -103,6 +104,17 @@ const manufacturingOrderSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: [true, 'Created by user is required'],
+    },
+    // ─── Procurement Automation fields ────────────────────────────────────────
+    linkedSoId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'SalesOrder',
+      default: null,
+    },
+    componentPOs: {
+      type: [mongoose.Schema.Types.ObjectId],
+      ref: 'PurchaseOrder',
+      default: [],
     },
   },
   {

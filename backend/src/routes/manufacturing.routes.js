@@ -11,6 +11,8 @@ const {
   produceOutput,
   cancelManufacturingOrder,
   getManufacturingDashboard,
+  getWorkOrdersByMO,
+  completeWorkOrder,
 } = require('../controllers/manufacturing.controller');
 const { authenticate } = require('../middleware/auth.middleware');
 const { authorize } = require('../middleware/rbac.middleware');
@@ -26,6 +28,9 @@ router.use(authenticate);
 
 // Put /dashboard BEFORE /:id to prevent routing collision
 router.get('/dashboard', authorize('manufacturing', 'read'), getManufacturingDashboard);
+
+router.get('/work-orders/list', authorize('manufacturing', 'read'), getWorkOrdersByMO);
+router.patch('/work-orders/:id/complete', authorize('manufacturing', 'update'), completeWorkOrder);
 
 router.get('/', authorize('manufacturing', 'read'), getManufacturingOrders);
 router.post('/', authorize('manufacturing', 'create'), validate(createManufacturingOrderSchema), createManufacturingOrder);

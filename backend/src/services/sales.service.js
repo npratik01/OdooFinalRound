@@ -242,10 +242,10 @@ const deliverSalesOrder = async (id, userId) => {
     throw { statusCode: 404, message: 'Sales Order not found' };
   }
 
-  if (!['Confirmed', 'Partially Delivered'].includes(order.status)) {
+  if (!['Confirmed', 'Partially Delivered', 'Ready For Delivery'].includes(order.status)) {
     throw {
       statusCode: 400,
-      message: `Cannot process delivery for order in '${order.status}' status. Order must be Confirmed or Partially Delivered.`
+      message: `Cannot process delivery for order in '${order.status}' status. Order must be Confirmed, Partially Delivered, or Ready For Delivery.`
     };
   }
 

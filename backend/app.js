@@ -26,12 +26,18 @@ app.use(cors(corsOptions));
 app.use(express.json());
 app.use(morgan("dev"));
 
-// Rate limiter
+// Rate limiter — generous limits for development; tighten via RATE_LIMIT_MAX env in production
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: Number(process.env.RATE_LIMIT_MAX) || 100, // limit each IP
+  max: Number(process.env.RATE_LIMIT_MAX) || 1000, // 1000 req/window per IP (was 100)
   standardHeaders: true,
   legacyHeaders: false,
+  // Skip rate-limiting for the lightweight /me health-check endpoint
+  skip: (req) => req.path === '/api/auth/me',
+  message: {
+    success: false,
+    message: 'Too many requests. Please try again later.',
+  },
 });
 app.use(limiter);
 

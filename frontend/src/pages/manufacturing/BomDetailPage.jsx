@@ -29,7 +29,7 @@ export default function BomDetailPage() {
   const { data: products } = useQuery({
     queryKey: ['active-products'],
     queryFn:  () => productApi.getProducts({ isActive: 'true', limit: 100 }),
-    select:   r => r.data?.data?.products || [],
+    select:   r => r.data?.data || [],
   })
 
   // 2. Fetch BoM details if editing
