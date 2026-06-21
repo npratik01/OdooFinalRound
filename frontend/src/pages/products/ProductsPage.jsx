@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Plus, Search, SlidersHorizontal, RotateCcw } from 'lucide-react'
+import { Plus, SlidersHorizontal, RotateCcw } from 'lucide-react'
 import { useProducts, useCreateProduct, useUpdateProduct, useDeleteProduct } from '../../hooks/useProducts'
 import { useAuth } from '../../context/AuthContext'
 import { PRODUCT_WRITE_ROLES } from '../../constants/roles'
@@ -8,7 +8,7 @@ import Modal from '../../components/common/Modal'
 import ConfirmDialog from '../../components/common/ConfirmDialog'
 import ProductForm from '../../components/forms/ProductForm'
 import Button from '../../components/common/Button'
-import Input from '../../components/common/Input'
+import SearchInput from '../../components/common/SearchInput'
 import Select from '../../components/common/Select'
 
 const PRODUCT_TYPE_OPTIONS = [
@@ -131,19 +131,19 @@ const ProductsPage = () => {
       <div className="card p-4 space-y-4">
         {/* Primary search row */}
         <div className="flex flex-col sm:flex-row gap-3">
-          <Input
+          <SearchInput
+            id="search-products"
             placeholder="Search by name, description, vendor..."
-            leftIcon={<Search size={15} />}
-            value={filters.search}
-            onChange={(e) => setFilter('search', e.target.value)}
-            containerClassName="flex-1"
+            defaultValue={filters.search}
+            onSearch={(val) => setFilter('search', val)}
+            className="flex-1"
           />
-          <Input
+          <SearchInput
+            id="search-products-sku"
             placeholder="Search by SKU (e.g. PRD-202606)"
-            leftIcon={<Search size={15} />}
-            value={filters.sku}
-            onChange={(e) => setFilter('sku', e.target.value)}
-            containerClassName="sm:max-w-56"
+            defaultValue={filters.sku}
+            onSearch={(val) => setFilter('sku', val)}
+            className="sm:max-w-56"
           />
           <div className="flex gap-2 shrink-0">
             <Button

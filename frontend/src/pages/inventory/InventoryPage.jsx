@@ -1,12 +1,12 @@
 import { useState } from 'react'
-import { AlertTriangle, Search, TrendingDown, TrendingUp, Package, Lock, Unlock } from 'lucide-react'
+import { AlertTriangle, TrendingDown, TrendingUp, Package, Lock, Unlock } from 'lucide-react'
 import { useInventory, useAdjustInventory, useIncreaseStock, useDecreaseStock, useReserveStock, useReleaseStock } from '../../hooks/useInventory'
 import { useAuth } from '../../context/AuthContext'
 import { INVENTORY_WRITE_ROLES } from '../../constants/roles'
 import InventoryTable from '../../components/tables/InventoryTable'
 import Modal from '../../components/common/Modal'
 import InventoryForm from '../../components/forms/InventoryForm'
-import Input from '../../components/common/Input'
+import SearchInput from '../../components/common/SearchInput'
 import Select from '../../components/common/Select'
 import Button from '../../components/common/Button'
 import AlertBanner from '../../components/common/AlertBanner'
@@ -90,12 +90,13 @@ const InventoryPage = () => {
   const { hasRole } = useAuth()
   const canWrite = hasRole(INVENTORY_WRITE_ROLES)
 
+  const [search, setSearch] = useState('')
   const [stockStatusFilter, setStockStatusFilter] = useState('')
   const [page, setPage] = useState(1)
   const [adjustModal, setAdjustModal] = useState({ open: false, record: null })
   const [quickOp, setQuickOp] = useState({ open: false, operation: null, record: null })
 
-  const { data, isLoading } = useInventory({ stockStatus: stockStatusFilter || undefined, page, limit: 10 })
+  const { data, isLoading } = useInventory({ search: search || undefined, stockStatus: stockStatusFilter || undefined, page, limit: 10 })
 
   const adjustInventory = useAdjustInventory()
   const increaseStock = useIncreaseStock()
@@ -150,6 +151,13 @@ const InventoryPage = () => {
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-3">
+        <SearchInput
+          id="search-inventory"
+          placeholder="Search by product name or SKU..."
+          defaultValue={search}
+          onSearch={(val) => { setSearch(val); setPage(1) }}
+          className="flex-1"
+        />
         <Select
           options={STATUS_FILTER}
           value={stockStatusFilter}

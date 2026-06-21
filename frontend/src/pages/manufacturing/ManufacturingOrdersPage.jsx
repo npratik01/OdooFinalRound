@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import { Plus, Search, Eye, Factory } from 'lucide-react'
+import { Plus, Eye, Factory } from 'lucide-react'
+import SearchInput from '../../components/common/SearchInput'
 import { manufacturingApi } from '../../api/manufacturing.api'
 import { useAuth } from '../../context/AuthContext'
 import { ROLES } from '../../constants/roles'
@@ -15,9 +16,10 @@ const STATUS_COLORS = {
   'IN_PROGRESS':            'bg-amber-500/15 text-amber-400',
   'DONE':                   'bg-emerald-500/15 text-emerald-400',
   'CANCELLED':              'bg-red-500/15 text-red-400',
+  'REJECTED':               'bg-rose-500/15 text-rose-400',
 }
 
-const STATUS_OPTIONS = ['DRAFT', 'CONFIRMED', 'WAITING_FOR_COMPONENTS', 'IN_PROGRESS', 'DONE', 'CANCELLED']
+const STATUS_OPTIONS = ['DRAFT', 'CONFIRMED', 'WAITING_FOR_COMPONENTS', 'IN_PROGRESS', 'DONE', 'CANCELLED', 'REJECTED']
 
 export default function ManufacturingOrdersPage() {
   const { hasRole } = useAuth()
@@ -56,16 +58,13 @@ export default function ManufacturingOrdersPage() {
 
       {/* Filters */}
       <div className="flex gap-3 flex-wrap">
-        <div className="relative flex-1 min-w-48">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-          <input
-            type="text"
-            placeholder="Search MO number..."
-            value={search}
-            onChange={e => { setSearch(e.target.value); setPage(1) }}
-            className="w-full pl-9 pr-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-primary-500"
-          />
-        </div>
+        <SearchInput
+          id="search-manufacturing-orders"
+          placeholder="Search MO number or product..."
+          defaultValue={search}
+          onSearch={(val) => { setSearch(val); setPage(1) }}
+          className="flex-1 min-w-48"
+        />
         <select
           value={status}
           onChange={e => { setStatus(e.target.value); setPage(1) }}
@@ -117,11 +116,35 @@ export default function ManufacturingOrdersPage() {
                 orders.map(mo => (
                   <tr key={mo._id} className="hover:bg-slate-800/50 transition-colors">
                     <td className="px-5 py-4">
-                      <span className="text-sm font-mono font-semibold text-primary-400">{mo.moNumber}</span>
+                      <div className="flex flex-col">
+                        <span className="text-sm font-mono font-semibold text-primary-400">{mo.moNumber}</span>
+                        {mo.createdAutomatically && (
+                          <span className="inline-flex items-center w-max mt-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                            Auto
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-5 py-4">
                       <p className="text-sm text-white font-medium">{mo.productId?.productName || '—'}</p>
-                      <p className="text-xs text-slate-500 font-mono">{mo.productId?.sku}</p>
+                      <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+                        <span className="text-xs text-slate-500 font-mono">{mo.productId?.sku}</span>
+                        {mo.sourceSalesOrderNumber && (
+                          <>
+                            <span className="text-slate-600 text-xs">•</span>
+                            <span className="text-xs text-slate-400">
+                              SO:{' '}
+                              {mo.linkedSoId ? (
+                                <Link to={`/sales/${mo.linkedSoId}`} className="text-primary-400 hover:underline font-semibold font-mono">
+                                  {mo.sourceSalesOrderNumber}
+                                </Link>
+                              ) : (
+                                <span className="font-mono">{mo.sourceSalesOrderNumber}</span>
+                              )}
+                            </span>
+                          </>
+                        )}
+                      </div>
                     </td>
                     <td className="px-5 py-4">
                       {mo.workCenterId ? (

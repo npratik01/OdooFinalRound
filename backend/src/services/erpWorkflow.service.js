@@ -133,8 +133,22 @@ const handleSalesOrderConfirmed = async (salesOrderId, userId) => {
         const strategy = product.procurementStrategy; // MTS or MTO
         const type = product.procurementType; // MANUFACTURING or PURCHASE
 
-        // For this automation brain, any deficit on confirmation is auto-replenished
-        if (type === 'MANUFACTURING') {
+        logger.info(`[ORCHESTRATOR] Product ${product.productName} → Strategy: ${strategy}, Type: ${type}`);
+
+        // Only MTO products auto-trigger procurement; MTS products replenish on their own schedule
+        if (strategy === 'MTS') {
+          logger.info(
+            `[ORCHESTRATOR] Product ${product.productName} is MTS — skipping auto-procurement for deficit of ${deficit} units.`
+          );
+          triggeredActions.push({
+            type: 'MTS_SKIP',
+            productId: item.productId,
+            productName: product.productName,
+            quantity: deficit,
+            reason: 'MTS strategy — replenish separately',
+            status: 'SKIPPED',
+          });
+        } else if (type === 'MANUFACTURING') {
           // Find Bill of Materials (BOM)
           const bom = await BillOfMaterials.findOne({ productId: product._id, isActive: true });
           if (!bom) {
@@ -153,14 +167,19 @@ const handleSalesOrderConfirmed = async (salesOrderId, userId) => {
           // Find default active Work Center
           const workCenter = await WorkCenter.findOne({ isActive: true });
 
-          // Call manufacturing service to create MO
-          logger.info(`[ORCHESTRATOR] Auto-generating Manufacturing Order for ${product.productName} (Qty: ${deficit})`);
+          // Call manufacturing service to create MO — passes automation tracking fields
+          logger.info(`[ORCHESTRATOR] Auto-generating Manufacturing Order for ${product.productName} (Qty: ${deficit}) ← SO ${order.soNumber}`);
           const mo = await manufacturingService.createManufacturingOrder({
             bomId: bom._id,
             plannedQty: deficit,
             workCenterId: workCenter ? workCenter._id : undefined,
             remarks: `Auto-generated via ERP Orchestrator to fulfill deficit of SO ${order.soNumber}`,
             linkedSoId: order._id,
+            // ── Automation tracking fields (saved to ManufacturingOrder) ────────
+            sourceSalesOrderNumber: order.soNumber,
+            createdAutomatically: true,
+            createdByAutomation: true,
+            pendingDemandQty: requestedQty,   // full demand from the SO line
           }, userId);
 
           triggeredActions.push({
@@ -173,6 +192,30 @@ const handleSalesOrderConfirmed = async (salesOrderId, userId) => {
             status: 'SUCCESS',
           });
 
+          // ── Dedicated Audit Log for Auto-MO creation ──────────────────────────
+          await AuditLog.create({
+            userId,
+            action: 'MO_AUTO_CREATION',
+            module: 'MANUFACTURING',
+            details: {
+              moId: mo._id,
+              moNumber: mo.moNumber,
+              sourceSalesOrderId: order._id,
+              sourceSalesOrderNumber: order.soNumber,
+              product: product.productName,
+              procurementStrategy: strategy,
+              procurementType: type,
+              orderedQty: requestedQty,
+              availableQty: availableQty,
+              reservedForDelivery: qtyToReserve,
+              deficitQty: deficit,
+              moPlannedQty: deficit,
+              trigger: 'SO_CONFIRMATION_WORKFLOW',
+              bomNumber: bom.bomNumber || bom._id,
+              workCenter: workCenter ? workCenter.name : 'UNASSIGNED',
+            },
+          });
+
           // Create document Traceability link
           await Traceability.create({
             sourceDocId: order._id,
@@ -182,14 +225,17 @@ const handleSalesOrderConfirmed = async (salesOrderId, userId) => {
             targetDocType: 'ManufacturingOrder',
             targetDocNumber: mo.moNumber,
             relationType: 'TRIGGERED',
-            remarks: `Triggered by stock deficit of ${deficit} units upon SO confirmation.`,
+            remarks: `Auto-triggered by stock deficit of ${deficit} units upon SO confirmation. ` +
+                     `Available: ${availableQty}, Ordered: ${requestedQty}, Deficit: ${deficit}.`,
           });
 
-          // Log Audit Log & Notifications for MO
+          // Notify all Manufacturing Users about the auto-created MO
           await createNotificationForRole(
             ROLES.MANUFACTURING_USER,
-            `Auto-MO Generated: ${mo.moNumber}`,
-            `Manufacturing Order ${mo.moNumber} was automatically created for ${product.productName} (Qty: ${deficit}) to fulfill Sales Order ${order.soNumber}.`
+            `🏭 Auto-MO Generated: ${mo.moNumber}`,
+            `Manufacturing Order ${mo.moNumber} was automatically created for ${product.productName} ` +
+            `(Qty: ${deficit}) to fulfill Sales Order ${order.soNumber}. ` +
+            `Stock available: ${availableQty}, demanded: ${requestedQty}, deficit: ${deficit}.`
           );
 
         } else if (type === 'PURCHASE') {

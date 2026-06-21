@@ -141,6 +141,32 @@ const getDashboardStats = async () => {
       : 0,
   }));
 
+  // ─── Pending MO Queue (DRAFT status — awaiting confirmation / rejection) ──
+  const pendingQueue = await ManufacturingOrder.find({ status: MO_STATUS.DRAFT })
+    .sort({ createdAt: -1 })
+    .limit(20)
+    .populate('productId', 'productName sku')
+    .populate('workCenterId', 'code name')
+    .lean();
+
+  const pendingQueueWithMeta = pendingQueue.map((mo) => ({
+    ...mo,
+    remainingQty: Math.max(0, mo.plannedQty - mo.producedQty),
+    completionPercentage: 0,
+  }));
+
+  // ─── Automation statistics ─────────────────────────────────────────────────
+  const [autoCreatedTotal, pendingApprovalCount] = await Promise.all([
+    ManufacturingOrder.countDocuments({ createdAutomatically: true }),
+    ManufacturingOrder.countDocuments({ createdAutomatically: true, status: MO_STATUS.DRAFT }),
+  ]);
+
+  const automationStats = {
+    autoCreatedTotal,
+    manuallyCreatedTotal: totalMOs - autoCreatedTotal,
+    pendingApprovalCount,
+  };
+
   return {
     summary: {
       totalMOs,
@@ -153,6 +179,8 @@ const getDashboardStats = async () => {
     topProducts,
     weeklyTrend,
     activeMOs: activeMOsWithVirtuals,
+    pendingQueue: pendingQueueWithMeta,
+    automationStats,
   };
 };
 

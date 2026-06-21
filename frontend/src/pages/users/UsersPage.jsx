@@ -1,12 +1,12 @@
 import { useState } from 'react'
-import { Plus, Search } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { useUsers, useCreateUser, useUpdateUser, useDeleteUser } from '../../hooks/useUsers'
 import UserTable from '../../components/tables/UserTable'
 import Modal from '../../components/common/Modal'
 import ConfirmDialog from '../../components/common/ConfirmDialog'
 import UserForm from '../../components/forms/UserForm'
 import Button from '../../components/common/Button'
-import Input from '../../components/common/Input'
+import SearchInput from '../../components/common/SearchInput'
 import Select from '../../components/common/Select'
 import { ROLE_LIST } from '../../constants/roles'
 
@@ -55,12 +55,12 @@ const UsersPage = () => {
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3">
-        <Input
+        <SearchInput
+          id="search-users"
           placeholder="Search by name or email..."
-          leftIcon={<Search size={15} />}
-          value={search}
-          onChange={(e) => { setSearch(e.target.value); setPage(1) }}
-          containerClassName="sm:max-w-xs"
+          defaultValue={search}
+          onSearch={(val) => { setSearch(val); setPage(1) }}
+          className="sm:max-w-xs"
         />
         <Select
           options={ROLE_FILTER}

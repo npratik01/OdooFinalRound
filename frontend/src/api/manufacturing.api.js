@@ -8,5 +8,6 @@ export const manufacturingApi = {
   startProduction:           (id)     => axiosInstance.patch(`/manufacturing/${id}/start`),
   produceOutput:             (id, data) => axiosInstance.post(`/manufacturing/${id}/produce`, data),
   cancelManufacturingOrder:  (id)     => axiosInstance.patch(`/manufacturing/${id}/cancel`),
+  rejectManufacturingOrder:  (id, data) => axiosInstance.patch(`/manufacturing/${id}/reject`, data),
   getDashboardStats:         ()       => axiosInstance.get('/manufacturing/dashboard'),
 }

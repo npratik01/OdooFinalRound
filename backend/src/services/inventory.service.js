@@ -273,6 +273,16 @@ const getAllInventory = async (query = {}) => {
   const filter = {};
   if (query.stockStatus) filter.stockStatus = query.stockStatus;
 
+  // If a search term is provided, resolve matching productIds first
+  if (query.search && query.search.trim()) {
+    const searchRegex = new RegExp(query.search.trim(), 'i');
+    const matchingProducts = await Product.find({
+      $or: [{ productName: searchRegex }, { sku: searchRegex }],
+    }).select('_id');
+    const productIds = matchingProducts.map((p) => p._id);
+    filter.productId = { $in: productIds };
+  }
+
   const [records, total] = await Promise.all([
     Inventory.find(filter)
       .sort(sort)

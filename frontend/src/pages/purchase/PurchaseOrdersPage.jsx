@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import { Plus, Search, Filter, Eye, ShoppingCart } from 'lucide-react'
+import { Plus, Filter, Eye, ShoppingCart } from 'lucide-react'
 import toast from 'react-hot-toast'
+import SearchInput from '../../components/common/SearchInput'
 import { purchaseApi } from '../../api/purchase.api'
 import { useAuth } from '../../context/AuthContext'
 import { ROLES } from '../../constants/roles'
@@ -24,7 +25,7 @@ export default function PurchaseOrdersPage() {
   const { hasRole } = useAuth()
   const canManage = hasRole(PURCHASE_ROLES)
 
-  const [search, setSearch] = useState('')
+  const [search, setSearch] = useState('')   // committed (sent to API)
   const [status, setStatus] = useState('')
   const [page, setPage]     = useState(1)
 
@@ -57,16 +58,13 @@ export default function PurchaseOrdersPage() {
 
       {/* Filters */}
       <div className="flex gap-3 flex-wrap">
-        <div className="relative flex-1 min-w-48">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-          <input
-            type="text"
-            placeholder="Search PO number..."
-            value={search}
-            onChange={e => { setSearch(e.target.value); setPage(1) }}
-            className="w-full pl-9 pr-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-primary-500"
-          />
-        </div>
+        <SearchInput
+          id="search-purchase-orders"
+          placeholder="Search PO number or vendor..."
+          defaultValue={search}
+          onSearch={(val) => { setSearch(val); setPage(1) }}
+          className="flex-1 min-w-48"
+        />
         <select
           value={status}
           onChange={e => { setStatus(e.target.value); setPage(1) }}

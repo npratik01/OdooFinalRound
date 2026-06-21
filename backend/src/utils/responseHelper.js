@@ -3,12 +3,16 @@
 /**
  * Standardized API response helper as per Step 12.
  */
-const sendSuccess = (res, data = {}, message = 'Operation successful', statusCode = 200) => {
-  return res.status(statusCode).json({
+const sendSuccess = (res, data = {}, message = 'Operation successful', statusCode = 200, meta) => {
+  const responseBody = {
     success: true,
     message,
     data: data || {}
-  });
+  };
+  if (meta) {
+    responseBody.meta = meta;
+  }
+  return res.status(statusCode).json(responseBody);
 };
 
 const sendCreated = (res, data = {}, message = 'Resource created successfully') => {

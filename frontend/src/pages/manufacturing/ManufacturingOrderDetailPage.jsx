@@ -18,6 +18,7 @@ const STATUS_COLORS = {
   'IN_PROGRESS':            'bg-amber-500/15 text-amber-400 border-amber-500/30',
   'DONE':                   'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
   'CANCELLED':              'bg-red-500/15 text-red-400 border-red-500/30',
+  'REJECTED':               'bg-rose-500/15 text-rose-400 border-rose-500/30',
 }
 
 export default function ManufacturingOrderDetailPage() {
@@ -89,10 +90,21 @@ export default function ManufacturingOrderDetailPage() {
     onError: err => toast.error(err.response?.data?.message || 'Failed to cancel MO'),
   })
 
+  const rejectMutation = useMutation({
+    mutationFn: (reason) => manufacturingApi.rejectManufacturingOrder(id, { reason }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['manufacturing-order', id] })
+      queryClient.invalidateQueries({ queryKey: ['manufacturing-orders'] })
+      toast.success('Manufacturing Order rejected successfully')
+    },
+    onError: err => toast.error(err.response?.data?.message || 'Failed to reject MO'),
+  })
+
   if (isLoading) return <div className="p-6"><div className="h-96 bg-slate-800/50 rounded-2xl animate-pulse" /></div>
   if (!mo) return <div className="p-6 text-center text-slate-400">Manufacturing Order not found</div>
 
   const canConfirm = mo.status === 'DRAFT' && canManage
+  const canReject  = mo.status === 'DRAFT' && canManage
   const canStart   = ['CONFIRMED', 'WAITING_FOR_COMPONENTS'].includes(mo.status) && canManage
   const canProduce = mo.status === 'IN_PROGRESS' && canManage
   const canCancel  = ['DRAFT', 'CONFIRMED', 'WAITING_FOR_COMPONENTS', 'IN_PROGRESS'].includes(mo.status) && canManage
@@ -131,13 +143,29 @@ export default function ManufacturingOrderDetailPage() {
             </button>
           )}
           {canConfirm && (
-            <button
-              onClick={() => confirmMutation.mutate()}
-              disabled={confirmMutation.isPending}
-              className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 rounded-xl text-sm transition-all"
-            >
-              <CheckCircle size={14} /> Confirm MO
-            </button>
+            <>
+              <button
+                onClick={() => confirmMutation.mutate()}
+                disabled={confirmMutation.isPending}
+                className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 rounded-xl text-sm transition-all"
+              >
+                <CheckCircle size={14} /> Confirm MO
+              </button>
+              {canReject && (
+                <button
+                  onClick={() => {
+                    const reason = window.prompt('Enter rejection reason (optional):', 'Replaced by vendor/procurement changes')
+                    if (reason !== null) {
+                      rejectMutation.mutate(reason)
+                    }
+                  }}
+                  disabled={rejectMutation.isPending}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-rose-500/10 border border-rose-500/30 text-rose-400 hover:bg-rose-500/20 rounded-xl text-sm transition-all"
+                >
+                  <XCircle size={14} /> Reject MO
+                </button>
+              )}
+            </>
           )}
           {canStart && (
             <button
@@ -226,6 +254,38 @@ export default function ManufacturingOrderDetailPage() {
           <div className="mt-4 p-3 bg-slate-900/30 rounded-xl flex items-center justify-between text-sm">
             <span className="text-slate-400 flex items-center gap-1.5"><Cpu size={14} /> Bill of Materials:</span>
             <span className="text-primary-400 font-mono font-medium">{mo.bomId.bomCode} (v{mo.bomId.version})</span>
+          </div>
+        )}
+
+        {mo.createdAutomatically && (
+          <div className="mt-4 p-3 bg-purple-500/10 border border-purple-500/20 rounded-xl flex items-center justify-between text-sm">
+            <span className="text-purple-400 font-semibold flex items-center gap-1.5">
+              🤖 Auto-Procured MO (Deficit replenishment)
+            </span>
+            {mo.sourceSalesOrderNumber && (
+              <span className="text-slate-300">
+                Source SO:{' '}
+                {mo.linkedSoId ? (
+                  <Link to={`/sales/${mo.linkedSoId}`} className="text-primary-400 hover:underline font-mono font-semibold">
+                    {mo.sourceSalesOrderNumber}
+                  </Link>
+                ) : (
+                  <span className="font-mono">{mo.sourceSalesOrderNumber}</span>
+                )}
+                {mo.pendingDemandQty != null && (
+                  <span className="text-slate-500 ml-1">
+                    (Demand: {mo.pendingDemandQty})
+                  </span>
+                )}
+              </span>
+            )}
+          </div>
+        )}
+
+        {mo.status === 'REJECTED' && mo.rejectionReason && (
+          <div className="mt-4 p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-sm">
+            <p className="text-rose-400 font-bold">MO Rejected by Manager</p>
+            <p className="text-slate-300 mt-1">{mo.rejectionReason}</p>
           </div>
         )}
 

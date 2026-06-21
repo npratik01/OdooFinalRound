@@ -4,7 +4,8 @@ import { useCustomers, useCustomer } from '../../hooks/useCustomers'
 import { useProducts } from '../../hooks/useProducts'
 import { Link } from 'react-router-dom'
 import SearchableSelect from '../../components/common/SearchableSelect'
-import { Plus, Search, Eye, Edit3, Trash2, Filter } from 'lucide-react'
+import { Plus, Eye, Edit3, Trash2, Filter } from 'lucide-react'
+import SearchInput from '../../components/common/SearchInput'
 import DataTable from '../../components/tables/DataTable'
 import Button from '../../components/common/Button'
 import Input from '../../components/common/Input'
@@ -428,17 +429,14 @@ const SalesOrdersPage = () => {
 
       {/* Filters */}
       <div className="flex flex-col sm:flex-row gap-4 bg-slate-900 border border-slate-800 p-4 rounded-2xl">
-        <div className="relative flex-1">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-          <input
-            type="text"
-            id="search-sales"
-            placeholder="Search by SO number or customer..."
-            className="w-full bg-slate-950 border border-slate-800 rounded-xl py-2 pl-10 pr-4 text-sm text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-primary-500 transition-all"
-            value={params.search}
-            onChange={(e) => setParams((p) => ({ ...p, search: e.target.value, page: 1 }))}
-          />
-        </div>
+        <SearchInput
+          id="search-sales"
+          placeholder="Search by SO number or customer..."
+          defaultValue={params.search}
+          onSearch={(val) => setParams((p) => ({ ...p, search: val, page: 1 }))}
+          className="flex-1"
+          inputClassName="bg-slate-950 border-slate-800 rounded-xl py-2 focus:border-primary-500"
+        />
         <div className="flex items-center gap-2">
           <Filter size={14} className="text-slate-500 shrink-0" />
           <select

@@ -10,6 +10,7 @@ const {
   startProduction,
   produceOutput,
   cancelManufacturingOrder,
+  rejectManufacturingOrder,
   getManufacturingDashboard,
   getWorkOrdersByMO,
   completeWorkOrder,
@@ -39,5 +40,6 @@ router.patch('/:id/confirm', authorize('manufacturing', 'update'), confirmManufa
 router.patch('/:id/start', authorize('manufacturing', 'update'), startProduction);
 router.post('/:id/produce', authorize('manufacturing', 'update'), validate(produceOutputSchema), produceOutput);
 router.patch('/:id/cancel', authorize('manufacturing', 'update'), cancelManufacturingOrder);
+router.patch('/:id/reject', authorize('manufacturing', 'update'), rejectManufacturingOrder);
 
 module.exports = router;

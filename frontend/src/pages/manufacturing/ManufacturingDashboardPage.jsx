@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import {
   Factory,
@@ -9,8 +9,11 @@ import {
   ChevronRight,
   Package,
   Wrench,
-  Clock
+  Clock,
+  XCircle,
+  CheckCircle
 } from 'lucide-react'
+import toast from 'react-hot-toast'
 import {
   BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, Legend
@@ -25,6 +28,7 @@ const STATUS_COLORS = {
   IN_PROGRESS: '#f59e0b',
   DONE:        '#10b981',
   CANCELLED:   '#ef4444',
+  REJECTED:    '#f43f5e',
 }
 
 const CustomTooltip = ({ active, payload, label }) => {
@@ -44,10 +48,32 @@ const CustomTooltip = ({ active, payload, label }) => {
 }
 
 export default function ManufacturingDashboardPage() {
+  const queryClient = useQueryClient()
+
   const { data: stats, isLoading, isError } = useQuery({
     queryKey: ['manufacturing-dashboard'],
     queryFn:  () => manufacturingApi.getDashboardStats().then(r => r.data?.data),
     refetchInterval: 1000 * 60 * 5, // refetch every 5 minutes
+  })
+
+  const confirmMutation = useMutation({
+    mutationFn: (id) => manufacturingApi.confirmManufacturingOrder(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['manufacturing-dashboard'] })
+      queryClient.invalidateQueries({ queryKey: ['manufacturing-orders'] })
+      toast.success('Manufacturing Order confirmed successfully!')
+    },
+    onError: err => toast.error(err.response?.data?.message || 'Failed to confirm MO'),
+  })
+
+  const rejectMutation = useMutation({
+    mutationFn: ({ id, reason }) => manufacturingApi.rejectManufacturingOrder(id, { reason }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['manufacturing-dashboard'] })
+      queryClient.invalidateQueries({ queryKey: ['manufacturing-orders'] })
+      toast.success('Manufacturing Order rejected successfully')
+    },
+    onError: err => toast.error(err.response?.data?.message || 'Failed to reject MO'),
   })
 
   if (isLoading) return <div className="p-6 flex justify-center items-center h-96"><LoadingSpinner /></div>
@@ -58,6 +84,8 @@ export default function ManufacturingDashboardPage() {
   const activeMOs = stats.activeMOs || []
   const topProducts = stats.topProducts || []
   const weeklyTrend = stats.weeklyTrend || []
+  const pendingQueue = stats.pendingQueue || []
+  const automationStats = stats.automationStats || { autoCreatedTotal: 0, manuallyCreatedTotal: 0, pendingApprovalCount: 0 }
 
   // Format Status Data for Pie Chart
   const pieData = Object.keys(byStatus).map(key => ({
@@ -88,6 +116,26 @@ export default function ManufacturingDashboardPage() {
           New MO <ArrowUpRight size={16} />
         </Link>
       </div>
+
+      {/* Automation Alerts / Status */}
+      {automationStats.pendingApprovalCount > 0 && (
+        <div className="bg-purple-950/20 border border-purple-500/20 rounded-2xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4 animate-fade-in">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-purple-400 shrink-0 text-lg">
+              🤖
+            </div>
+            <div>
+              <h4 className="text-white text-sm font-semibold">Procurement Automation Pending Approval</h4>
+              <p className="text-slate-400 text-xs mt-0.5">
+                There are <span className="text-purple-400 font-bold">{automationStats.pendingApprovalCount} manufacturing order(s)</span> automatically generated from Sales Order deficits waiting for manager confirmation.
+              </p>
+            </div>
+          </div>
+          <div className="text-xs text-slate-500 font-semibold md:text-right">
+            Total Auto-Procured: {automationStats.autoCreatedTotal}
+          </div>
+        </div>
+      )}
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -179,6 +227,104 @@ export default function ManufacturingDashboardPage() {
           )}
         </div>
       </div>
+
+      {/* Pending MO Queue */}
+      {pendingQueue.length > 0 && (
+        <div className="bg-slate-800/60 border border-slate-700/50 rounded-2xl p-5 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="font-semibold text-white text-sm flex items-center gap-2">
+              📋 Pending Approvals Queue
+              <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-slate-700 text-slate-300">
+                {pendingQueue.length}
+              </span>
+            </h3>
+            <span className="text-xs text-slate-400">Awaiting Manager Action</span>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="border-b border-slate-700/50 text-xs text-slate-500 uppercase tracking-wider font-semibold">
+                  <th className="pb-3 px-2">Order Info</th>
+                  <th className="pb-3 px-2">Product</th>
+                  <th className="pb-3 px-2 text-right">Planned Qty</th>
+                  <th className="pb-3 px-2">Source / Trigger</th>
+                  <th className="pb-3 px-2 text-right">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-700/30 text-sm">
+                {pendingQueue.map((mo) => (
+                  <tr key={mo._id} className="hover:bg-slate-800/30 transition-all">
+                    <td className="py-3 px-2">
+                      <div className="flex flex-col">
+                        <Link to={`/manufacturing/${mo._id}`} className="font-mono font-bold text-primary-400 hover:underline">
+                          {mo.moNumber}
+                        </Link>
+                        {mo.createdAutomatically && (
+                          <span className="inline-flex items-center w-max mt-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-purple-500/10 text-purple-400 border border-purple-500/20">
+                            Auto
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="py-3 px-2">
+                      <p className="text-white font-medium">{mo.productId?.productName}</p>
+                      <p className="text-xs text-slate-500 font-mono">{mo.productId?.sku}</p>
+                    </td>
+                    <td className="py-3 px-2 text-right font-semibold text-white">
+                      {mo.plannedQty}
+                    </td>
+                    <td className="py-3 px-2">
+                      {mo.sourceSalesOrderNumber ? (
+                        <div className="text-xs text-slate-300">
+                          SO:{' '}
+                          {mo.linkedSoId ? (
+                            <Link to={`/sales/${mo.linkedSoId}`} className="text-primary-400 hover:underline font-mono font-semibold">
+                              {mo.sourceSalesOrderNumber}
+                            </Link>
+                          ) : (
+                            <span className="font-mono">{mo.sourceSalesOrderNumber}</span>
+                          )}
+                          {mo.pendingDemandQty != null && (
+                            <span className="text-slate-500 ml-1">
+                              (Demand: {mo.pendingDemandQty})
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-slate-500">Manual Entry</span>
+                      )}
+                    </td>
+                    <td className="py-3 px-2 text-right">
+                      <div className="flex justify-end gap-2">
+                        <button
+                          onClick={() => confirmMutation.mutate(mo._id)}
+                          disabled={confirmMutation.isPending}
+                          className="flex items-center gap-1 px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20 rounded-lg text-xs font-semibold transition-all"
+                        >
+                          <CheckCircle size={12} /> Confirm
+                        </button>
+                        <button
+                          onClick={() => {
+                            const reason = window.prompt('Enter rejection reason (optional):')
+                            if (reason !== null) {
+                              rejectMutation.mutate({ id: mo._id, reason })
+                            }
+                          }}
+                          disabled={rejectMutation.isPending}
+                          className="flex items-center gap-1 px-2.5 py-1 bg-rose-500/10 border border-rose-500/30 text-rose-400 hover:bg-rose-500/20 rounded-lg text-xs font-semibold transition-all"
+                        >
+                          <XCircle size={12} /> Reject
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Lists Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

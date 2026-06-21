@@ -58,10 +58,15 @@ const createManufacturingOrder = async (data, userId) => {
     remarks: data.remarks || '',
     createdBy: userId,
     linkedSoId: data.linkedSoId || null,
+    // ── Automation tracking fields ──────────────────────────────────────────
+    sourceSalesOrderNumber: data.sourceSalesOrderNumber || null,
+    createdAutomatically: data.createdAutomatically || false,
+    createdByAutomation: data.createdByAutomation || false,
+    pendingDemandQty: data.pendingDemandQty != null ? data.pendingDemandQty : null,
   });
 
   await mo.save();
-  logger.info(`Manufacturing Order created: ${moNumber}`);
+  logger.info(`Manufacturing Order created: ${moNumber}${data.createdAutomatically ? ` (Auto-created for SO ${data.sourceSalesOrderNumber})` : ''}`);
   return populateMO(mo._id);
 };
 
@@ -479,6 +484,41 @@ const completeWorkOrder = async (woId, userId) => {
   return wo;
 };
 
+// ─── REJECT Manufacturing Order (auto-created MOs only) ───────────────────────
+
+const rejectManufacturingOrder = async (id, { reason } = {}, userId) => {
+  const mo = await ManufacturingOrder.findById(id);
+  if (!mo) throw { statusCode: 404, message: 'Manufacturing Order not found' };
+
+  if (mo.status !== MO_STATUS.DRAFT) {
+    throw {
+      statusCode: 400,
+      message: `Cannot reject MO in '${mo.status}' status. Only DRAFT (pending) MOs can be rejected.`,
+    };
+  }
+
+  mo.status = MO_STATUS.REJECTED;
+  mo.rejectionReason = reason || 'Rejected by manager';
+  await mo.save();
+
+  // Audit log
+  const AuditLog = require('../models/AuditLog.model');
+  await AuditLog.create({
+    userId,
+    action: 'MO_REJECTED',
+    module: 'MANUFACTURING',
+    details: {
+      moId: mo._id,
+      moNumber: mo.moNumber,
+      sourceSalesOrderNumber: mo.sourceSalesOrderNumber,
+      reason: mo.rejectionReason,
+    },
+  });
+
+  logger.info(`Manufacturing Order rejected: ${mo.moNumber} — Reason: ${mo.rejectionReason}`);
+  return populateMO(mo._id);
+};
+
 module.exports = {
   createManufacturingOrder,
   getAllManufacturingOrders,
@@ -487,6 +527,7 @@ module.exports = {
   startProduction,
   produceOutput,
   cancelManufacturingOrder,
+  rejectManufacturingOrder,
   getWorkOrdersByMO,
   completeWorkOrder,
 };

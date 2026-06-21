@@ -10,6 +10,7 @@ const MO_STATUS = Object.freeze({
   IN_PROGRESS:            'IN_PROGRESS',
   DONE:                   'DONE',
   CANCELLED:              'CANCELLED',
+  REJECTED:               'REJECTED',   // Manager explicitly rejected the auto-created MO
 });
 
 // ─── MO Component Sub-Schema ──────────────────────────────────────────────────
@@ -115,6 +116,34 @@ const manufacturingOrderSchema = new mongoose.Schema(
       type: [mongoose.Schema.Types.ObjectId],
       ref: 'PurchaseOrder',
       default: [],
+    },
+    // ─── Automation tracking fields ───────────────────────────────────────────
+    // Mirror of linkedSoId.soNumber for quick display without populate
+    sourceSalesOrderNumber: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+    // True when this MO was generated automatically by the ERP Orchestrator
+    createdAutomatically: {
+      type: Boolean,
+      default: false,
+    },
+    // Alias kept consistent with user request spec
+    createdByAutomation: {
+      type: Boolean,
+      default: false,
+    },
+    // How many units the originating Sales Order demanded
+    pendingDemandQty: {
+      type: Number,
+      default: null,
+    },
+    // Optional rejection reason
+    rejectionReason: {
+      type: String,
+      trim: true,
+      default: '',
     },
   },
   {

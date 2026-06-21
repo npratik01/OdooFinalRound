@@ -8,9 +8,10 @@ module.exports = {
     const data = payload.data !== undefined ? payload.data : payload;
     const message = payload.message || 'Operation successful';
     const statusCode = payload.statusCode || 200;
+    const meta = payload.meta;
     // Special handle if data is just the wrapper
     const actualData = (data && data.data !== undefined && data.meta === undefined) ? data.data : data;
-    return responseHelper.sendSuccess(res, actualData, message, statusCode);
+    return responseHelper.sendSuccess(res, actualData, message, statusCode, meta);
   },
   sendCreated: (res, payload = {}) => {
     const data = payload.data !== undefined ? payload.data : payload;

@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import { Plus, Search, Eye, Cpu } from 'lucide-react'
+import { Plus, Eye, Cpu } from 'lucide-react'
+import SearchInput from '../../components/common/SearchInput'
 import { bomApi } from '../../api/bom.api'
 import { useAuth } from '../../context/AuthContext'
 import { ROLES } from '../../constants/roles'
@@ -50,16 +51,13 @@ export default function BillOfMaterialsPage() {
 
       {/* Filters */}
       <div className="flex gap-3 flex-wrap">
-        <div className="relative flex-1 min-w-48">
-          <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
-          <input
-            type="text"
-            placeholder="Search BoM code..."
-            value={search}
-            onChange={e => { setSearch(e.target.value); setPage(1) }}
-            className="w-full pl-9 pr-3 py-2 bg-slate-800 border border-slate-700 rounded-xl text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:border-primary-500"
-          />
-        </div>
+        <SearchInput
+          id="search-bom"
+          placeholder="Search BoM code or product name..."
+          defaultValue={search}
+          onSearch={(val) => { setSearch(val); setPage(1) }}
+          className="flex-1 min-w-48"
+        />
         <select
           value={isActive}
           onChange={e => { setIsActive(e.target.value); setPage(1) }}
