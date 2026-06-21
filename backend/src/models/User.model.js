@@ -64,6 +64,9 @@ userSchema.index({ isActive: 1 });
 // ─── Pre-save: Hash Password ──────────────────────────────────────────────
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
+  // Defense-in-depth: do not re-hash if already a bcrypt hash
+  const isBcrypt = /^\$2[aby]\$\d{2}\$[./A-Za-z0-9]{53}$/.test(this.password);
+  if (isBcrypt) return next();
   const saltRounds = parseInt(process.env.BCRYPT_SALT_ROUNDS, 10) || 12;
   this.password = await bcrypt.hash(this.password, saltRounds);
   next();

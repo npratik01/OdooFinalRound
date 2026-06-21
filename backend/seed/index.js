@@ -995,7 +995,7 @@ async function seed() {
     log('  ┌─────────────────────────────────┬─────────────────┬────────────────────┐');
     log('  │ Email                           │ Password        │ Role               │');
     log('  ├─────────────────────────────────┼─────────────────┼────────────────────┤');
-    log('  │ admin@erp.com                   │ Admin@123       │ ADMIN              │');
+    log('  │ admin@erp.com                   │ Admin@1234      │ ADMIN              │');
     log('  │ owner1@erp.com                  │ Owner@1234      │ BUSINESS_OWNER     │');
     log('  │ sales1@erp.com                  │ Sales@1234      │ SALES_USER         │');
     log('  │ purchase1@erp.com               │ Purchase@1234   │ PURCHASE_USER      │');

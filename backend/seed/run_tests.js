@@ -781,6 +781,26 @@ async function test11_RBACValidation() {
     const count = await User.countDocuments({ role });
     assert(count >= 1, `11.users.${role}`, `${role}: ${count} user(s) in DB`, `No users with role ${role}`);
   }
+
+  // 11.y Verify seeded users' passwords match expected plain text values
+  const seededUserCredentials = [
+    { email: 'admin@erp.com', password: 'Admin@1234', desc: 'Admin User password matches Admin@1234' },
+    { email: 'owner1@erp.com', password: 'Owner@1234', desc: 'Business Owner password matches Owner@1234' },
+    { email: 'sales1@erp.com', password: 'Sales@1234', desc: 'Sales User password matches Sales@1234' },
+    { email: 'purchase1@erp.com', password: 'Purchase@1234', desc: 'Purchase User password matches Purchase@1234' },
+    { email: 'mfg1@erp.com', password: 'Mfg@1234', desc: 'Manufacturing User password matches Mfg@1234' },
+    { email: 'inv1@erp.com', password: 'Inv@1234', desc: 'Inventory Manager password matches Inv@1234' },
+  ];
+
+  for (const cred of seededUserCredentials) {
+    const userDoc = await User.findOne({ email: cred.email }).select('+password');
+    if (!userDoc) {
+      fail(`11.password.${cred.email}`, `Password match for ${cred.email}`, `User document not found`);
+      continue;
+    }
+    const isMatch = await bcrypt.compare(cred.password, userDoc.password);
+    assert(isMatch, `11.password.${cred.email}`, cred.desc, `Password hash in DB does not match '${cred.password}'`);
+  }
 }
 
 // ═════════════════════════════════════════════════════════════════════════════

@@ -152,12 +152,16 @@ const LoginPage = () => {
             <div className="space-y-2">
               {[
                 { label: 'Admin', email: 'admin@erp.com', pass: 'Admin@1234' },
-                { label: 'Business Owner', email: 'owner@erp.com', pass: 'Owner@1234' },
-                { label: 'Inventory Mgr', email: 'inventory@erp.com', pass: 'Inv@1234' },
+                { label: 'Business Owner', email: 'owner1@erp.com', pass: 'Owner@1234' },
+                { label: 'Inventory Mgr', email: 'inv1@erp.com', pass: 'Inv@1234' },
+                { label: 'Sales User', email: 'sales1@erp.com', pass: 'Sales@1234' },
+                { label: 'Purchase User', email: 'purchase1@erp.com', pass: 'Purchase@1234' },
+                { label: 'Mfg Lead', email: 'mfg1@erp.com', pass: 'Mfg@1234' },
               ].map((c) => (
-                <div key={c.email} className="flex items-center justify-between text-xs">
-                  <span className="text-slate-500">{c.label}</span>
-                  <span className="font-mono text-slate-400">{c.email}</span>
+                <div key={c.email} className="flex items-center justify-between text-xs gap-4">
+                  <span className="text-slate-500 font-medium min-w-[100px]">{c.label}</span>
+                  <span className="font-mono text-slate-400 truncate">{c.email}</span>
+                  <span className="font-mono text-slate-500">{c.pass}</span>
                 </div>
               ))}
             </div>

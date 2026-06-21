@@ -24,8 +24,8 @@ npm run dev
 | Email | Password | Role |
 |-------|----------|------|
 | admin@erp.com | Admin@1234 | ADMIN |
-| owner@erp.com | Owner@1234 | BUSINESS_OWNER |
-| inventory@erp.com | Inv@1234 | INVENTORY_MANAGER |
+| owner1@erp.com | Owner@1234 | BUSINESS_OWNER |
+| inv1@erp.com | Inv@1234 | INVENTORY_MANAGER |
 
 ## API Base URL
 

@@ -10,7 +10,7 @@ const USERS_DATA = [
   {
     name: 'System Administrator',
     email: 'admin@erp.com',
-    password: 'Admin@123',
+    password: 'Admin@1234',
     role: 'ADMIN',
     isActive: true,
   },
