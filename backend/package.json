@@ -6,7 +6,11 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
-    "seed": "node seeders/seed.js"
+    "seed": "node seed/index.js",
+    "seed:legacy": "node seeders/seed.js",
+    "test:e2e": "node seed/run_tests.js",
+    "test:all": "node seed/index.js && node seed/run_tests.js",
+    "seed:fresh": "node -e \"require('dotenv').config(); const mongoose=require('mongoose'); mongoose.connect(process.env.MONGO_URI).then(async ()=>{ const models=['users','products','inventories','customers','vendors','salesorders','deliveries','purchaseorders','goodsreceipts','workcenters','billofmaterials','manufacturingorders','workorders','auditlogs','inventorymovements']; for(const m of models){ try{ await mongoose.connection.collection(m).deleteMany({}); }catch(e){} } console.log('DB cleared'); mongoose.disconnect(); })\""
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
