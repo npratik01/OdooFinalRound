@@ -100,6 +100,7 @@ const purchaseOrderSchema = new mongoose.Schema(
 
 // ─── Virtual: pendingQtyTotal ─────────────────────────────────────────────
 purchaseOrderSchema.virtual('pendingQtyTotal').get(function () {
+  if (!this.items) return 0;
   return this.items.reduce((sum, item) => sum + Math.max(0, item.quantity - item.receivedQty), 0);
 });
 
